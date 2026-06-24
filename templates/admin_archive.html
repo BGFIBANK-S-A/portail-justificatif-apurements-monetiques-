@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archives - Administration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_dashboard.css') }}">
+    <style>
+        .client-bloc { margin-bottom: 1.5rem; }
+        .client-entete {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+        }
+        .client-avatar {
+            width: 34px; height: 34px; border-radius: 50%; background: var(--marine-clair);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; flex-shrink: 0;
+        }
+        .client-nom { font-size: 15px; font-weight: 700; color: var(--gris-900); }
+        .client-mail { font-size: 12px; color: var(--gris-400); }
+        .client-compte { margin-left: auto; font-size: 12px; color: var(--gris-500); }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-logo">
+            <img src="{{ url_for('static', filename='BGFI_logo.png') }}" alt="BGFIBank" />
+            <div class="header-info">
+                <div class="header-nom">Portail Justificatifs</div>
+                <div class="header-sous">Espace Administration</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="badge-admin">ADMIN</span>
+            <span>{{ session['utilisateur_nom'] }}</span>
+            <a href="/logout" class="btn-logout">Se deconnecter</a>
+        </div>
+    </header>
+
+    <div class="corps">
+
+        <div class="page-titre">
+            <div>
+                <h1>Archives</h1>
+                <p>{{ total }} dossier(s) finalisé(s), regroupés par client</p>
+            </div>
+            <a href="/admin" class="btn-secondaire">&#129144; Retour aux dossiers</a>
+        </div>
+
+        {% if groupes %}
+            {% for g in groupes %}
+            <div class="client-bloc">
+                <div class="client-entete">
+                    <div class="client-avatar">{{ g.client.prenom[0] }}{{ g.client.nom[0] }}</div>
+                    <div>
+                        <div class="client-nom">{{ g.client.prenom }} {{ g.client.nom }}</div>
+                        <div class="client-mail">{{ g.client.email }}</div>
+                    </div>
+                    <div class="client-compte">{{ g.dossiers | length }} dossier(s)</div>
+                </div>
+
+                <div class="section-carte">
+                    <table class="tableau">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Type</th>
+                                <th>Periode</th>
+                                <th>Montant (XAF)</th>
+                                <th>Decision</th>
+                                <th>Date</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in g.dossiers %}
+                            <tr>
+                                <td class="ref">{{ d.reference }}</td>
+                                <td>
+                                    {% if d.type_dossier == 'voyage' %}
+                                    <span class="badge badge-voyage">Voyage</span>
+                                    {% else %}
+                                    <span class="badge badge-ligne">En ligne</span>
+                                    {% endif %}
+                                </td>
+                                <td class="date">{{ d.periode or 'indefinie' }}</td>
+                                <td class="montant">
+                                    {% if d.montant %}
+                                    {{ "{:,.0f}".format(d.montant).replace(',', ' ') }}
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td>
+                                    {% if d.statut == 'valide' %}
+                                    <span class="badge badge-valide">Valide</span>
+                                    {% else %}
+                                    <span class="badge badge-refuse">Refuse</span>
+                                    {% endif %}
+                                </td>
+                                <td class="date">{{ d.date_mise_a_jour.strftime('%d/%m/%Y') }}</td>
+                                <td><a href="/admin/dossier/{{ d.id }}" class="lien-examiner">Voir</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="section-carte">
+                <div class="vide"><p>Aucun dossier finalise pour le moment.</p></div>
+            </div>
+        {% endif %}
+
+    </div>
+
+    <footer class="footer">
+        <p>BGFIBank Gabon &copy; 2026 &middot; Espace administration</p>
+    </footer>
+
+</body>
+</html>

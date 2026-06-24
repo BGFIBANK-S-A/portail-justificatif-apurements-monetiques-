@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importer un fichier - Administration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_dashboard.css') }}">
+    <style>
+        /* ── LAYOUT DEUX COLONNES ── */
+        .import-layout { display: grid; grid-template-columns: 420px 1fr; gap: 1.5rem; align-items: start; }
+        .import-carte { background: var(--blanc); border: 1px solid var(--gris-200); border-radius: 16px; padding: 2rem; box-shadow: 0 1px 3px rgba(15,23,42,0.04); }
+        .carte-titre { font-size: 15px; font-weight: 700; color: var(--gris-900); margin-bottom: 4px; }
+        .carte-sous { font-size: 12px; color: var(--gris-500); margin-bottom: 1.5rem; line-height: 1.5; }
+        
+        .champ-import { margin-bottom: 1.25rem; }
+        .champ-import label.lbl { display: block; font-size: 12px; font-weight: 600; color: var(--gris-700); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+        .choix-type { display: flex; gap: 10px; }
+        .choix-type input { display: none; }
+        .choix-type label { flex: 1; border: 1.5px solid var(--gris-200); border-radius: 12px; padding: 12px; cursor: pointer; transition: all .2s ease; text-align: center; }
+        .choix-type label .ic-type { font-size: 20px; display: block; margin-bottom: 4px; }
+        .choix-type label b { display: block; font-size: 13px; color: var(--gris-900); }
+        .choix-type label span { font-size: 11px; color: var(--gris-400); }
+        .choix-type input:checked + label { border-color: var(--marine-clair); background: var(--bleu-bg); }
+
+        .champ-import input[type="text"] { width: 100%; padding: 10px 14px; border: 1.5px solid var(--gris-200); border-radius: 10px; font-size: 13px; font-family: 'Inter', sans-serif; outline: none; box-sizing: border-box; color: var(--gris-900); }
+        .champ-import input[type="text"]:focus { border-color: var(--accent); }
+        .champ-import .indice { font-size: 11px; color: var(--gris-400); margin-top: 5px; }
+
+        .zone-fichier { border: 2px dashed var(--gris-200); border-radius: 14px; padding: 1.5rem 1rem; text-align: center; background: var(--gris-50); cursor: pointer; transition: all .2s ease; display: block; }
+        .zone-fichier:hover { border-color: var(--accent); background: #EEF5FF; }
+        .zone-fichier.active { border-color: var(--vert); background: var(--vert-bg); }
+        .zone-fichier .ic-upload { font-size: 28px; display: block; margin-bottom: 6px; }
+        .zone-fichier .txt-upload { font-size: 12px; color: var(--gris-500); }
+        .zone-fichier .txt-upload b { color: var(--accent); }
+        .zone-fichier .nom-fichier { font-size: 12px; color: var(--vert); font-weight: 600; margin-top: 6px; display: none; }
+        .input-cache { display: none; }
+
+        .btn-importer { width: 100%; padding: 12px; background: var(--marine); color: var(--blanc); border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s ease; margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-importer:hover { background: var(--marine-clair); transform: translateY(-1px); }
+        .msg-erreur { background: var(--rouge-bg); color: var(--rouge); border-radius: 10px; padding: 10px 14px; font-size: 12px; font-weight: 500; margin-bottom: 1.25rem; border-left: 3px solid var(--rouge); }
+
+        .colonne-droite { display: flex; flex-direction: column; gap: 1.25rem; }
+        .recap-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+        .recap-stat { background: var(--gris-50); border: 1px solid var(--gris-200); border-radius: 12px; padding: 12px 14px; }
+        .recap-stat .v { font-size: 24px; font-weight: 700; color: var(--marine-clair); line-height: 1; }
+        .recap-stat .l { font-size: 11px; color: var(--gris-500); margin-top: 3px; }
+        .recap-meta { font-size: 11px; color: var(--gris-400); margin-bottom: 1rem; line-height: 1.6; }
+        .recap-meta b { color: var(--gris-700); }
+
+        .table-clients, .table-gestion { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .table-clients thead tr, .table-gestion thead tr { border-bottom: 2px solid var(--gris-200); }
+        .table-clients th, .table-gestion th { text-align: left; padding: 8px 10px; color: var(--gris-400); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+        .table-clients td, .table-gestion td { padding: 10px; border-bottom: 1px solid var(--gris-100); vertical-align: middle; }
+        .table-clients tr:hover td, .table-gestion tr:hover td { background: var(--gris-50); }
+
+        .client-nom { font-weight: 600; color: var(--gris-900); font-size: 12px; }
+        .pill-new { background: var(--bleu-bg); color: var(--bleu); padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+        .pill-act { background: var(--vert-bg); color: var(--vert); padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+        
+        .statut-actif { display: inline-flex; align-items: center; gap: 5px; background: var(--vert-bg); color: var(--vert); padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+
+        .lien-activation, .lien-token { font-size: 10px; color: var(--accent); text-decoration: none; word-break: break-all; }
+        .lien-activation:hover, .lien-token:hover { text-decoration: underline; }
+        .btn-copier { background: var(--gris-100); border: 1px solid var(--gris-200); border-radius: 6px; padding: 3px 8px; font-size: 10px; cursor: pointer; color: var(--gris-700); transition: all .15s; white-space: nowrap; margin-left: 6px; }
+        .btn-copier:hover { background: var(--gris-200); }
+        .btn-copier.copie { background: var(--vert-bg); color: var(--vert); border-color: var(--vert); }
+
+        .lien-cell { display: flex; align-items: center; gap: 6px; }
+        .section-titre-panel { font-size: 13px; font-weight: 700; color: var(--gris-900); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+        .vide { text-align: center; padding: 2rem; color: var(--gris-400); font-size: 13px; }
+
+        @media (max-width: 900px) { .import-layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-logo">
+            <img src="{{ url_for('static', filename='BGFI_logo.png') }}" alt="BGFIBank" />
+            <div class="header-info">
+                <div class="header-nom">Portail Justificatifs</div>
+                <div class="header-sous">Espace Administration</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="badge-admin">ADMIN</span>
+            <span>{{ session['utilisateur_nom'] }}</span>
+            <a href="/logout" class="btn-logout">Se deconnecter</a>
+        </div>
+    </header>
+
+    <div class="corps">
+
+        <a href="/admin" class="filtre-pilule" style="display:inline-block;margin-bottom:1.5rem;">
+            &#129144; Retour aux dossiers
+        </a>
+
+        <div class="import-layout">
+
+            <div class="import-carte">
+                <div class="carte-titre">Import fichier de depassements</div>
+                <p class="carte-sous">Chargez votre fichier Excel nettoye.</p>
+                
+                {% if erreur %}
+                <div class="msg-erreur">⚠ {{ erreur }}</div>
+                {% endif %}
+
+                <form method="POST" action="/admin/import" enctype="multipart/form-data" id="form-import">
+
+                    <div class="champ-import">
+                        <label class="lbl">Type de depassement</label>
+                        <div class="choix-type">
+                            <input type="radio" name="type_dossier" id="t-voyage" value="voyage" checked />
+                            <label for="t-voyage"><b>Voyage</b></label>
+                            
+                            <input type="radio" name="type_dossier" id="t-ligne" value="ligne" />
+                            <label for="t-ligne"><b>En ligne</b></label>
+                        </div>
+                    </div>
+
+                    <div class="champ-import" id="champ-periode" style="display: none;">
+                        <label class="lbl" for="periode">Periode (ex: 2026-05)</label>
+                        <input type="text" id="periode" name="periode" placeholder="Requis pour les paiements en ligne" />
+                        <div class="indice">Les depassements en ligne sont reinitialises chaque mois.</div>
+                    </div>
+
+                    <div class="champ-import">
+                        <label class="lbl">Fichier Excel</label>
+                        <label for="fichier_excel" class="zone-fichier" id="zone-drop">
+                            <span class="txt-upload">
+                                <b>Cliquez pour parcourir</b> ou glissez le fichier ici
+                            </span>
+                            <span class="nom-fichier" id="nom-fichier"></span>
+                        </label>
+                        <input type="file" id="fichier_excel" name="fichier_excel" accept=".xlsx,.xls,.csv" class="input-cache" />
+                    </div>
+
+                    <button type="submit" class="btn-importer" id="btn-submit">
+                        <span id="btn-texte">⬆ Lancer l import</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="colonne-droite">
+                {% if resume %}
+                <div class="import-carte">
+                    <div class="carte-titre">Import termine</div>
+                    <p class="carte-sous">Periode : <b>{{ resume.periode or 'Globale (Voyage)' }}</b></p>
+
+                    <div class="recap-grille">
+                        <div class="recap-stat">
+                            <div class="v">{{ resume.comptes_crees }}</div>
+                            <div class="l">Comptes crees</div>
+                        </div>
+                        <div class="recap-stat">
+                            <div class="v">{{ resume.dossiers_crees }}</div>
+                            <div class="l">Dossiers crees</div>
+                        </div>
+                        <div class="recap-stat">
+                            <div class="v">{{ resume.lignes }}</div>
+                            <div class="l">Lignes a justifier</div>
+                        </div>
+                    </div>
+
+                    <p class="recap-meta">
+                        Dossiers mis a jour (Ajout de lignes) : <b>{{ resume.dossiers_actualises }}</b><br>
+                        Comptes existants reutilises : <b>{{ resume.comptes_existants }}</b>
+                    </p>
+
+                    {% if resume.a_notifier %}
+                    <table class="table-clients">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Statut</th>
+                                <th>Nvelles Lignes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in resume.a_notifier %}
+                            <tr>
+                                <td><div class="client-nom">{{ p.nom }}</div></td>
+                                <td>
+                                    {% if p.actif %}
+                                    <span class="pill-act">Actif</span>
+                                    {% else %}
+                                    <span class="pill-new">A activer</span>
+                                    {% endif %}
+                                </td>
+                                <td>+{{ p.nb }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="import-carte">
+                    <div class="section-titre-panel">
+                        <span>Gestion des clients</span>
+                        <span class="compteur-clients">{{ clients | length }} compte(s)</span>
+                    </div>
+                    <p class="carte-sous">Liste des clients generes par les imports.</p>
+
+                    {% if clients %}
+                    <table class="table-gestion">
+                        <thead>
+                            <tr>
+                                <th>Clients</th>
+                                <th>Statut</th>
+                                <th>Lien d'activation / Dossiers</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in clients %}
+                            <tr>
+                                <td><div class="client-nom">{{ c.prenom }} {{ c.nom }}</div></td>
+                                <td>
+                                    {% if c.actif %}
+                                    <span class="statut-actif"> Actif</span>
+                                    {% else %}
+                                    <span class="statut-inactif"> Inactif</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not c.actif and c.token_activation %}
+                                    {% set lien = config.BASE_URL + '/activer/' + c.token_activation %}
+                                    <div class="lien-cell">
+                                        <a href="{{ lien }}" target="_blank" class="lien-token">Lien d'activation</a>
+                                        <button class="btn-copier" onclick="copier(this, '{{ lien }}')">Copier</button>
+                                    </div>
+                                    {% else %}
+                                    <span style="font-size:11px;color:var(--gris-400);">{{ c.dossiers | length }} dossier(s)</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="vide">Aucun client pour l instant.</div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>BGFIBank Gabon &copy; 2026 &middot; Espace administration</p>
+    </footer>
+
+    <script>
+        // Logique d'affichage de la période
+        const radios = document.querySelectorAll('input[name="type_dossier"]');
+        const champPeriode = document.getElementById('champ-periode');
+        const inputPeriode = document.getElementById('periode');
+        
+        function updatePeriodeVisibility() {
+            const type = document.querySelector('input[name="type_dossier"]:checked').value;
+            if (type === 'voyage') {
+                champPeriode.style.display = 'none';
+                inputPeriode.required = false;
+                inputPeriode.value = ""; // On vide la période pour ne pas forcer le groupement
+            } else {
+                champPeriode.style.display = 'block';
+                inputPeriode.required = true;
+            }
+        }
+        
+        radios.forEach(r => r.addEventListener('change', updatePeriodeVisibility));
+        updatePeriodeVisibility(); // Init
+
+        // Logique Fichier
+        const input = document.getElementById('fichier_excel');
+        const zone = document.getElementById('zone-drop');
+        const nomSpan = document.getElementById('nom-fichier');
+
+        input.addEventListener('change', function () {
+            if (this.files.length) {
+                nomSpan.textContent = '' + this.files[0].name;
+                nomSpan.style.display = 'block';
+                zone.classList.add('active');
+            }
+        });
+
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('active'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('active'));
+        zone.addEventListener('drop', e => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if (files.length) {
+                input.files = files;
+                nomSpan.textContent = files[0].name;
+                nomSpan.style.display = 'block';
+            }
+        });
+
+        document.getElementById('form-import').addEventListener('submit', function () {
+            document.getElementById('btn-texte').textContent = 'Import en cours...';
+            document.getElementById('btn-submit').disabled = true;
+        });
+
+        function copier(btn, lien) {
+            navigator.clipboard.writeText(lien).then(() => {
+                btn.textContent = 'Copie';
+                btn.classList.add('copie');
+                setTimeout(() => {
+                    btn.textContent = 'Copier';
+                    btn.classList.remove('copie');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

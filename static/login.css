@@ -1,0 +1,339 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root { 
+    --marine: #0D2B4E;
+    --marine-fonce: #081D38;
+    --marine-clair: #1B3A6B;
+    --accent: #2d65c0;
+    --accent-clair: #2d5688;
+    --blanc: #FFFFFF;
+    --gris-50: #F8FAFC;
+    --gris-100: #F1F5F9;
+    --gris-200: #E2E8F0;
+    --gris-400: #94A3B8;
+    --gris-500: #64748B;
+    --gris-900: #0F172A;
+    --rouge: #8d1b1b;
+    --rouge-bg: #FEF2F2;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: var(--marine-fonce);
+    background-image:
+        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(45,101,192,0.18), transparent),
+        radial-gradient(ellipse 60% 40% at 90% 110%, rgba(45,101,192,0.12), transparent);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ============ HEADER ============ */
+.header {
+    padding: 20px 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-logo img {
+    height: 36px;
+    width: auto;
+    filter: brightness(1.5) invert(0);
+}
+
+.header-info {
+    border-left: 1px solid rgba(255,255,255,0.15);
+    padding-left: 16px;
+}
+
+.header-nom {
+    color: var(--blanc);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+}
+
+.header-sous {
+    color: rgba(255,255,255,0.45);
+    font-size: 11px;
+    margin-top: 2px;
+    font-weight: 400;
+}
+
+.header-right {
+    color: rgba(255,255,255,0.45);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ============ CORPS ============ */
+.corps {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+}
+
+.conteneur {
+    width: 100%;
+    max-width: 430px;
+}
+
+.logo-bloc {
+    text-align: center;
+    margin-bottom: 2.25rem;
+}
+
+.logo-titre {
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--blanc);
+    margin-bottom: 8px;
+    letter-spacing: -0.8px;
+    line-height: 1.2;
+}
+
+.logo-sous {
+    font-size: 14px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 400;
+}
+
+/* ============ CARTE ============ */
+.carte {
+    background: var(--blanc);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow:
+        0 1px 2px rgba(0,0,0,0.06),
+        0 32px 80px rgba(0,0,0,0.4);
+}
+
+.carte-titre {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--gris-900);
+    margin-bottom: 2rem;
+    letter-spacing: -0.3px;
+}
+
+/* ============ CHAMPS ============ */
+.champ {
+    margin-bottom: 18px;
+}
+
+.champ label {
+    display: block;
+    font-size: 13px;
+    color: var(--gris-900);
+    margin-bottom: 7px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.champ input {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid var(--gris-200);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--gris-900);
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    background: var(--blanc);
+    font-family: 'Inter', sans-serif;
+}
+
+.champ input:hover {
+    border-color: var(--gris-400);
+}
+
+.champ input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+}
+
+.champ input::placeholder {
+    color: var(--gris-400);
+}
+
+/* ============ LIEN OUBLIE ============ */
+.lien-oublie {
+    text-align: right;
+    margin-bottom: 1.5rem;
+    margin-top: -6px;
+}
+
+.lien-oublie a {
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.lien-oublie a:hover {
+    color: var(--marine-clair);
+}
+
+/* ============ ERREUR ============ */
+.message-erreur {
+    background: var(--rouge-bg);
+    color: var(--rouge);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    margin-bottom: 18px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.message-erreur::before {
+    content: '⚠';
+    font-size: 15px;
+}
+
+/* ============ BOUTON ============ */
+.btn-connexion {
+    width: 100%;
+    padding: 14px;
+    background: var(--marine-clair);
+    color: var(--blanc);
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: -0.1px;
+    transition: all 0.2s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.btn-connexion:hover {
+    background: var(--marine);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(27,58,107,0.4);
+}
+
+.btn-connexion:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* ============ SEPARATEUR ============ */
+.separateur {
+    text-align: center;
+    margin: 1.5rem 0;
+    font-size: 12px;
+    color: var(--gris-400);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+}
+
+.separateur::before,
+.separateur::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gris-200);
+}
+
+/* ============ INSCRIPTION ============ */
+.lien-inscription {
+    text-align: center;
+    font-size: 14px;
+    color: var(--gris-500);
+}
+
+.lien-inscription a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.lien-inscription a:hover {
+    color: var(--marine-clair);
+}
+
+/* ============ FOOTER ============ */
+.footer {
+    padding: 20px 56px;
+    text-align: center;
+}
+
+.footer p {
+    color: rgba(255,255,255,0.25);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.2px;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 640px) {
+    .header {
+        padding: 16px 24px;
+    }
+
+    .header-right {
+        display: none;
+    }
+
+    .carte {
+        padding: 1.75rem;
+        border-radius: 16px;
+    }
+
+    .logo-titre {
+        font-size: 24px;
+    }
+
+    .footer {
+        padding: 16px 24px;
+    }
+}
+/* ============ NOTE D ACCES (remplace le bloc inscription) ============ */
+.note-acces {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--gris-200);
+    font-size: 12.5px;
+    color: var(--gris-500);
+    line-height: 1.6;
+    text-align: center;
+}
+
+.note-acces a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.note-acces a:hover {
+    color: var(--marine-clair);
+}
+
+/* Champ desactive (email pre-rempli sur la page d activation) */
+.champ input:disabled {
+    background: var(--gris-50);
+    color: var(--gris-500);
+    cursor: not-allowed;
+}

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - Portail Justificatifs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_dashboard.css') }}">
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-logo">
+            <img src="{{ url_for('static', filename='BGFI_logo.png') }}" alt="BGFIBank" />
+            <div class="header-info">
+                <div class="header-nom">Portail Justificatifs</div>
+                <div class="header-sous">Espace Administration</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="badge-admin">ADMIN</span>
+            <span>{{ session['utilisateur_nom'] }}</span>
+            <a href="/logout" class="btn-logout">Se deconnecter</a>
+        </div>
+    </header>
+
+    <div class="corps">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for categorie, message in messages %}
+            <div class="flash flash-{{ categorie }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="page-titre">
+            <div>
+                <h1>Gestion des dossiers</h1>
+                <p>Depassements importes depuis les fichiers Excel mensuels</p>
+            </div>
+            <div class="actions-titre">
+                <a href="/admin/archive" class="btn-secondaire">Archive ({{ stats.archives }})</a>
+                <a href="/admin/utilisateurs" class="btn-secondaire">Administrateurs</a>
+                <a href="/admin/import" class="btn-nouveau">Importer un fichier Excel</a>
+            </div>
+        </div>
+
+        <div class="stats-grille">
+            <a href="/admin" class="stat-carte {% if not filtre_statut %}active{% endif %}">
+                <div class="stat-label">A traiter</div>
+                <div class="stat-valeur">{{ stats.actifs }}</div>
+            </a>
+            <a href="/admin?statut=incomplet" class="stat-carte {% if filtre_statut == 'incomplet' %}active{% endif %}">
+                <div class="stat-label">Incomplets</div>
+                <div class="stat-valeur gris">{{ stats.incomplets }}</div>
+            </a>
+            <a href="/admin?statut=en_attente" class="stat-carte {% if filtre_statut == 'en_attente' %}active{% endif %}">
+                <div class="stat-label">En attente</div>
+                <div class="stat-valeur orange">{{ stats.en_attente }}</div>
+            </a>
+            <a href="/admin?statut=en_cours" class="stat-carte {% if filtre_statut == 'en_cours' %}active{% endif %}">
+                <div class="stat-label">En cours</div>
+                <div class="stat-valeur bleu">{{ stats.en_cours }}</div>
+            </a>
+        </div>
+
+        <div class="filtres-type">
+            <a href="/admin{% if filtre_statut %}?statut={{ filtre_statut }}{% endif %}"
+               class="filtre-pilule {% if not filtre_type %}active{% endif %}">Tous les types</a>
+            <a href="/admin?type=voyage{% if filtre_statut %}&statut={{ filtre_statut }}{% endif %}"
+               class="filtre-pilule {% if filtre_type == 'voyage' %}active{% endif %}">Voyage</a>
+            <a href="/admin?type=ligne{% if filtre_statut %}&statut={{ filtre_statut }}{% endif %}"
+               class="filtre-pilule {% if filtre_type == 'ligne' %}active{% endif %}">En ligne</a>
+        </div>
+
+        <div class="section-carte">
+            {% if dossiers %}
+            <table class="tableau">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Client</th>
+                        <th>Type</th>
+                        <th>Periode</th>
+                        <th>Montant (XAF)</th>
+                        <th>Statut</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dossier in dossiers %}
+                    <tr class="{% if dossier.a_ete_mis_a_jour %}ligne-non-lue{% endif %}">
+                        <td class="ref">
+                            {{ dossier.reference }}
+                            {% if dossier.a_ete_mis_a_jour %}
+                            <span class="badge badge-attente" style="margin-left:5px; background-color:#3B82F6; color:white;">Nouveau</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ dossier.client.prenom }} {{ dossier.client.nom }}</td>
+                        <td>
+                            {% if dossier.type_dossier == 'voyage' %}
+                            <span class="badge badge-voyage">Voyage</span>
+                            {% else %}
+                            <span class="badge badge-ligne">En ligne</span>
+                            {% endif %}
+                        </td>
+                        <td class="date">{{ dossier.periode or 'indefinie' }}</td>
+                        <td class="montant">
+                            {% if dossier.montant %}
+                            {{ "{:,.0f}".format(dossier.montant).replace(',', ' ') }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if dossier.statut == 'en_attente' %}
+                            <span class="badge badge-attente">En attente</span>
+                            {% elif dossier.statut == 'en_cours' %}
+                            <span class="badge badge-cours">En cours</span>
+                            {% elif dossier.statut == 'valide' %}
+                            <span class="badge badge-valide">Valide</span>
+                            {% elif dossier.statut == 'refuse' %}
+                            <span class="badge badge-refuse">Refuse</span>
+                            {% elif dossier.statut == 'incomplet' %}
+                            <span class="badge badge-incomplet">Incomplet</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/admin/dossier/{{ dossier.id }}" class="lien-examiner">Examiner</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="vide">
+                <p>Aucun dossier ne correspond a ces filtres.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <footer class="footer">
+        <p>BGFIBank Gabon &copy; 2026 &middot; Espace administration</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,662 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+    --marine: #0D2B4E;
+    --marine-fonce: #081D38;
+    --marine-clair: #1B3A6B;
+    --accent: #1156c5;
+    --blanc: #FFFFFF;
+    --gris-50: #F8FAFC;
+    --gris-100: #F1F5F9;
+    --gris-200: #E2E8F0;
+    --gris-400: #94A3B8;
+    --gris-500: #64748B;
+    --gris-900: #0F172A;
+    --vert: #092714;
+    --vert-bg: #ffffff;
+    --orange: #835623;
+    --orange-bg: #665d38;
+    --bleu: #0c204b;
+    --bleu-bg: #EFF6FF;
+    --rouge: #7c0f0f;
+    --rouge-bg: #cfcfcf;
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: var(--gris-50);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================================
+   HEADER
+========================================================= */
+.header {
+    background: var(--marine-fonce);
+    background-image: radial-gradient(ellipse 60% 100% at 80% 0%, rgba(59,130,246,0.15), transparent);
+    padding: 16px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-logo img {
+    height: 36px;
+    width: auto;
+    filter: brightness(1.1) invert(0);
+}
+
+.header-info {
+    border-left: 1px solid rgba(255,255,255,0.15);
+    padding-left: 16px;
+}
+
+.header-nom {
+    color: var(--blanc);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.header-sous {
+    color: rgba(255,255,255,0.45);
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.badge-admin {
+    color: var(--blanc);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.8px;
+}
+
+.btn-logout {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.85);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+    background: rgba(255,255,255,0.15);
+    color: var(--blanc);
+}
+
+/* =========================================================
+   CORPS
+========================================================= */
+.corps {
+    flex: 1;
+    max-width: 960px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+}
+
+.retour {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--gris-500);
+    text-decoration: none;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.retour:hover {
+    color: var(--marine-clair);
+}
+
+/* =========================================================
+   CARTES
+========================================================= */
+.carte {
+    background: var(--blanc);
+    border: 1px solid var(--gris-200);
+    border-radius: 16px;
+    padding: 1.75rem;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+}
+
+/* =========================================================
+   EN-TETE DOSSIER
+========================================================= */
+.entete-dossier {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+.entete-gauche h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--gris-900);
+    letter-spacing: -0.4px;
+    line-height: 1.3;
+}
+
+.reference {
+    font-size: 12px;
+    color: var(--gris-500);
+    margin-top: 6px;
+}
+
+.client-info {
+    font-size: 13px;
+    color: var(--gris-500);
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+.badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+
+
+.entete-droite {
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.montant-label {
+    display: block;
+    font-size: 11px;
+    color: var(--gris-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.montant-valeur {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--marine-clair);
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   BANDEAU OCR
+========================================================= */
+.bandeau-ocr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--bleu-bg);
+    border-color: #DBEAFE;
+}
+
+.bandeau-titre {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gris-900);
+}
+
+.bandeau-texte {
+    font-size: 12px;
+    color: var(--gris-500);
+    margin-top: 3px;
+    line-height: 1.4;
+}
+
+.btn-analyser {
+    background: var(--marine-clair);
+    color: var(--blanc);
+    border: none;
+    border-radius: 10px;
+    padding: 11px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.btn-analyser:hover {
+    background: var(--marine);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(27,58,107,0.35);
+}
+
+/* =========================================================
+   GRILLE DOCUMENTS + OCR
+========================================================= */
+.grille-docs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.carte-doc {
+    margin-bottom: 0;
+}
+
+.doc-entete {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1rem;
+}
+
+.doc-icone {
+    font-size: 26px;
+}
+
+.doc-type {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gris-900);
+}
+
+.doc-nom {
+    font-size: 11px;
+    color: var(--gris-400);
+    word-break: break-all;
+    margin-top: 2px;
+}
+
+/* Resultats OCR */
+.ocr-resultats {
+    background: var(--vert-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.ocr-titre {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--vert);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.ocr-liste {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 16px;
+    font-size: 13px;
+}
+
+.ocr-liste dt {
+    color: var(--gris-500);
+    font-weight: 500;
+}
+
+.ocr-liste dd {
+    color: var(--gris-900);
+    font-weight: 600;
+    word-break: break-word;
+}
+
+.ocr-indispo {
+    font-size: 12px;
+    color: var(--gris-400);
+    font-style: italic;
+    padding: 10px 0;
+}
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+.section-titre {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gris-900);
+    margin-bottom: 1.25rem;
+    letter-spacing: -0.2px;
+}
+
+/* =========================================================
+   TABLEAU FACTURES
+========================================================= */
+.tableau-factures {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.tableau-factures th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gris-400);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--gris-200);
+}
+
+.tableau-factures td {
+    padding: 12px;
+    border-bottom: 1px solid var(--gris-100);
+    color: var(--gris-900);
+}
+
+.tableau-factures tbody tr:hover {
+    background: var(--gris-50);
+}
+
+.facture-desc {
+    font-weight: 500;
+}
+
+.facture-fichier-nom {
+    font-size: 11px;
+    color: var(--gris-400);
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.col-montant {
+    text-align: right;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tableau-factures tfoot td {
+    border-bottom: none;
+    border-top: 2px solid var(--gris-200);
+    font-weight: 700;
+    color: var(--gris-900);
+    padding-top: 14px;
+}
+
+.tableau-factures tfoot .total {
+    color: var(--marine-clair);
+    font-size: 15px;
+}
+
+/* =========================================================
+   ZONE DECISION
+========================================================= */
+.zone-decision .champ {
+    margin-bottom: 0;
+}
+
+.zone-decision label {
+    display: block;
+    font-size: 13px;
+    color: var(--gris-900);
+    margin-bottom: 7px;
+    font-weight: 500;
+}
+
+.zone-decision textarea {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid var(--gris-200);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--gris-900);
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.zone-decision textarea:hover {
+    border-color: var(--gris-400);
+}
+
+.zone-decision textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+}
+
+.zone-decision textarea::placeholder {
+    color: var(--gris-400);
+}
+
+.boutons-decision {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.boutons-decision button {
+    flex: 1;
+    min-width: 160px;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.btn-prendre {
+    background: var(--bleu-bg);
+    color: var(--bleu);
+    border: 1.5px solid #DBEAFE;
+}
+
+.btn-prendre:hover {
+    background: #DBEAFE;
+    transform: translateY(-1px);
+}
+
+.btn-valider {
+    background: var(--vert);
+    color: var(--blanc);
+}
+
+.btn-valider:hover {
+    background: #0f5a2a;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(22,163,74,0.35);
+}
+
+.btn-refuser {
+    background: var(--rouge-bg);
+    color: var(--rouge);
+    border: 1.5px solid #FEE2E2;
+}
+
+.btn-refuser:hover {
+    background: #FEE2E2;
+    transform: translateY(-1px);
+}
+
+.commentaire-texte {
+    font-size: 14px;
+    color: var(--gris-900);
+    line-height: 1.5;
+}
+
+/* =========================================================
+   BOUTON OUVRIR DOCUMENT
+========================================================= */
+.doc-entete-infos {
+    flex: 1;
+    min-width: 0;
+}
+
+.btn-ouvrir {
+    background: var(--gris-100);
+    color: var(--marine-clair);
+    border: 1.5px solid var(--gris-200);
+    border-radius: 10px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-ouvrir:hover {
+    background: var(--marine-clair);
+    border-color: var(--marine-clair);
+    color: var(--blanc);
+}
+
+/* =========================================================
+   LIEN FICHIER FACTURE
+========================================================= */
+.lien-fichier {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.lien-fichier:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   FOOTER
+========================================================= */
+.footer {
+    background: var(--marine-fonce);
+    padding: 18px 48px;
+    text-align: center;
+    margin-top: auto;
+}
+
+.footer p {
+    color: rgba(255,255,255,0.25);
+    font-size: 11px;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+@media (max-width: 700px) {
+    .header { padding: 14px 20px; }
+    .header-right span { display: none; }
+    .corps { padding: 1.5rem 1rem; }
+    .carte { padding: 1.25rem; }
+
+    .entete-dossier {
+        flex-direction: column;
+    }
+
+    .entete-droite {
+        text-align: left;
+    }
+
+    .grille-docs {
+        grid-template-columns: 1fr;
+    }
+
+    .bandeau-ocr {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .btn-analyser {
+        width: 100%;
+    }
+
+    .facture-fichier-nom { display: none; }
+
+    .boutons-decision {
+        flex-direction: column;
+    }
+
+    .boutons-decision button {
+        min-width: 100%;
+    }
+}
+/* =========================================================
+   PERIODE DE VOYAGE + LIGNES (ajout)
+========================================================= */
+.periode-carte {
+    border-color: #DBEAFE;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.date-ligne { color: var(--gris-500); white-space: nowrap; font-size: 12px; }
+
+.justif-manquant {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+/* ============ ZONE DANGER (suppression) ============ */
+.zone-danger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid #FEE2E2;
+    background: var(--rouge-bg);
+}
+.danger-titre { font-size: 14px; font-weight: 700; color: var(--rouge); }
+.danger-texte { font-size: 12px; color: var(--gris-500); margin-top: 3px; line-height: 1.4; max-width: 520px; }
+.btn-supprimer {
+    background: var(--rouge);
+    color: var(--blanc);
+    border: none;
+    border-radius: 10px;
+    padding: 11px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+.btn-supprimer:hover { background: #B91C1C; transform: translateY(-1px); }
+
+@media (max-width: 700px) {
+    .zone-danger { flex-direction: column; align-items: flex-start; }
+    .btn-supprimer { width: 100%; }
+}

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administrateurs - Administration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_dashboard.css') }}">
+    <style>
+        .grille-admin { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
+        .form-admin .champ { margin-bottom: 14px; }
+        .form-admin label { display: block; font-size: 13px; font-weight: 600;
+            color: var(--gris-900); margin-bottom: 6px; }
+        .form-admin input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--gris-200);
+            border-radius: 12px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; }
+        .form-admin input:focus { border-color: var(--accent); }
+        .form-admin .double { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-creer { width: 100%; padding: 12px; background: var(--marine-clair); color: var(--blanc);
+            border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+            font-family: 'Inter', sans-serif; transition: all .2s ease; margin-top: 6px; }
+        .btn-creer:hover { background: var(--marine); }
+        .badge-actif { background: var(--vert-bg); color: var(--vert); padding: 3px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-inactif { background: #F3F4F6; color: #6B7280; padding: 3px 10px;
+            border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-moi { background: var(--bleu-bg); color: var(--bleu); padding: 2px 8px;
+            border-radius: 20px; font-size: 10px; font-weight: 600; margin-left: 6px; }
+        .actions-admin { display: flex; gap: 8px; }
+        .actions-admin button { border: none; border-radius: 8px; padding: 6px 12px;
+            font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+        .btn-toggle { background: var(--gris-100); color: var(--gris-900); border: 1px solid var(--gris-200); }
+        .btn-toggle:hover { background: var(--gris-200); }
+        .btn-del { background: var(--rouge-bg); color: var(--rouge); border: 1px solid #FEE2E2; }
+        .btn-del:hover { background: #FEE2E2; }
+        .muet { color: var(--gris-400); font-size: 11px; }
+        @media (max-width: 800px) { .grille-admin { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-logo">
+            <img src="{{ url_for('static', filename='BGFI_logo.png') }}" alt="BGFIBank" />
+            <div class="header-info">
+                <div class="header-nom">Portail Justificatifs</div>
+                <div class="header-sous">Espace Administration</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="badge-admin">ADMIN</span>
+            <span>{{ session['utilisateur_nom'] }}</span>
+            <a href="/logout" class="btn-logout">Se deconnecter</a>
+        </div>
+    </header>
+
+    <div class="corps">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for categorie, message in messages %}
+            <div class="flash flash-{{ categorie }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="page-titre">
+            <div>
+                <h1>Administrateurs</h1>
+                <p>{{ admins | length }} administrateur(s) &middot; {{ nb_clients }} client(s) geres automatiquement</p>
+            </div>
+            <a href="/admin" class="btn-secondaire">&#129144; Retour aux dossiers</a>
+        </div>
+
+        <div class="grille-admin">
+
+            <!-- LISTE DES ADMINS -->
+            <div class="section-carte">
+                <table class="tableau">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Statut</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in admins %}
+                        <tr>
+                            <td>
+                                {{ a.prenom }} {{ a.nom }}
+                                {% if a.id == moi %}<span class="badge-moi">vous</span>{% endif %}
+                            </td>
+                            <td class="muet">{{ a.email }}</td>
+                            <td>
+                                {% if a.actif %}<span class="badge-actif">Actif</span>
+                                {% else %}<span class="badge-inactif">Inactif</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if a.id != moi %}
+                                <div class="actions-admin">
+                                    <form method="POST" action="/admin/utilisateurs/{{ a.id }}/basculer">
+                                        <button type="submit" class="btn-toggle">
+                                            {% if a.actif %}Desactiver{% else %}Activer{% endif %}
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="/admin/utilisateurs/{{ a.id }}/supprimer"
+                                          onsubmit="return confirm('Supprimer l administrateur {{ a.prenom }} {{ a.nom }} ?');">
+                                        <button type="submit" class="btn-del">Supprimer</button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- CREATION D UN ADMIN -->
+            <div class="section-carte form-admin">
+                <div class="section-titre">Nouvel administrateur</div>
+                <form method="POST" action="/admin/utilisateurs/creer">
+                    <div class="double">
+                        <div class="champ">
+                            <label for="nom">Nom</label>
+                            <input type="text" id="nom" name="nom" required />
+                        </div>
+                        <div class="champ">
+                            <label for="prenom">Prenom</label>
+                            <input type="text" id="prenom" name="prenom" required />
+                        </div>
+                    </div>
+                    <div class="champ">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="prenom.nom@bgfi.com" required />
+                    </div>
+                    <div class="champ">
+                        <label for="mot_de_passe">Mot de passe provisoire</label>
+                        <input type="password" id="mot_de_passe" name="mot_de_passe"
+                               placeholder="6 caracteres minimum" required />
+                    </div>
+                    <button type="submit" class="btn-creer">Creer l administrateur</button>
+                </form>
+                <p class="muet" style="margin-top:12px;">
+                    Le compte est actif immediatement avec ce mot de passe.
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <footer class="footer">
+        <p>BGFIBank Gabon &copy; 2026 &middot; Espace administration</p>
+    </footer>
+
+</body>
+</html>

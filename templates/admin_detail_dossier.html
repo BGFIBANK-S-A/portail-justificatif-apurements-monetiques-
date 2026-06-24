@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ dossier.reference }} - Administration</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin_detail.css') }}">
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-logo">
+            <img src="{{ url_for('static', filename='BGFI_logo.png') }}" alt="BGFIBank" />
+            <div class="header-info">
+                <div class="header-nom">Portail Justificatifs</div>
+                <div class="header-sous">Espace Administration</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="badge-admin">ADMIN</span>
+            <span>{{ session['utilisateur_nom'] }}</span>
+            <a href="/logout" class="btn-logout">Se deconnecter</a>
+        </div>
+    </header>
+
+    <div class="corps">
+
+        <a href="/admin" class="retour">&#129144; Retour a la liste des dossiers</a>
+
+        <div class="carte entete-dossier">
+            <div class="entete-gauche">
+                <h1>
+                    {% if dossier.type_dossier == 'voyage' %}Depassement voyage
+                    {% else %}Depassement en ligne{% endif %}
+                </h1>
+                
+                <!-- AJOUT DU NOM DU CLIENT ICI -->
+                <h2 style="font-size: 1.1rem; color: #475569; margin: 8px 0;">
+                    Client : <strong>{{ dossier.client.nom }} {{ dossier.client.prenom }}</strong>
+                </h2>
+
+                <p class="reference">Periode: {{ dossier.periode or 'En anticipation' }},      
+                cree le {{ dossier.date_creation.strftime('%d/%m/%Y') }}</p>
+            </div>
+            <div class="entete-droite">
+                <span class="montant-label">Montant a justifier</span>
+                <span class="montant-valeur">
+                    {% if dossier.montant %}
+                    {{ "{:,.0f}".format(dossier.montant).replace(',', ' ') }} XAF
+                    {% else %}0 XAF{% endif %}
+                </span>
+            </div>
+        </div>
+
+        {% if dossier.type_dossier == 'voyage' %}
+        <div class="carte periode-carte">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    Periode de voyage :
+                    {% if dossier.date_debut_voyage and dossier.date_fin_voyage %}
+                        du <span style="color:var(--marine-clair); font-weight:bold;">{{ dossier.date_debut_voyage.strftime('%d/%m/%Y') }}</span>
+                        au <span style="color:var(--marine-clair); font-weight:bold;">{{ dossier.date_fin_voyage.strftime('%d/%m/%Y') }}</span>
+                    {% else %}
+                        <span style="color:#861010; font-weight:bold;">Dates manquantes (En attente ou saisie manuelle)</span>
+                    {% endif %}
+                </div>
+                
+                <form method="POST" action="/admin/dossier/{{ dossier.id }}/modifier-dates" style="display: flex; gap: 10px; align-items: center; background: var(--gris-50); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--gris-200);">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <label style="font-size: 10px; color: var(--gris-500); font-weight: bold;">ALLER</label>
+                        <input type="date" name="date_debut" style="font-size: 11px; padding: 4px; border: 1px solid var(--gris-300); border-radius: 4px;" value="{{ dossier.date_debut_voyage.strftime('%Y-%m-%d') if dossier.date_debut_voyage else '' }}">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <label style="font-size: 10px; color: var(--gris-500); font-weight: bold;">RETOUR</label>
+                        <input type="date" name="date_fin" style="font-size: 11px; padding: 4px; border: 1px solid var(--gris-300); border-radius: 4px;" value="{{ dossier.date_fin_voyage.strftime('%Y-%m-%d') if dossier.date_fin_voyage else '' }}">
+                    </div>
+                    <button type="submit" style="background: var(--marine-clair); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 14px;">Mettre a jour</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if docs_voyage %}
+        <div class="grille-docs">
+            {% for doc in docs_voyage %}
+            <div class="carte carte-doc">
+                <div class="doc-entete">
+                    <span class="doc-icone"></span>
+                    <div class="doc-entete-infos">
+                        <p class="doc-type">
+                            {% if doc.type_document == 'passeport' %}Passeport
+                            {% elif doc.type_document == 'billet_aller' %}Billet aller
+                            {% else %}Billet retour{% endif %}
+                        </p>
+                        <p class="doc-nom">{{ doc.nom_fichier }}</p>
+                    </div>
+                    <a href="/document/{{ doc.id }}" target="_blank" class="btn-ouvrir">Ouvrir</a>
+                </div>
+
+                <div style="margin:12px 0; padding:10px; border-top:1px solid #E2E8F0; font-size:12px;">
+                    <div>Statut fichier : 
+                        {% if doc.statut == 'valide' %}
+                        <span style="color:green; font-weight:bold;">Valide</span>
+                        {% elif doc.statut == 'refuse' %}
+                        <span style="color:rgb(129, 8, 8); font-weight:bold;">Refuse</span> <br><small style="color:#64748B;">Motif: {{ doc.motif_refus }}</small>
+                        {% else %}
+                        <span style="color:#64748B; font-weight:bold;">En attente</span>
+                        {% endif %}
+                    </div>
+                    <form method="POST" action="/admin/document/{{ doc.id }}/decision" style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+                        <input type="text" name="motif_refus" placeholder="Motif de refus si rejet..." style="padding:6px; border:1px solid #E2E8F0; border-radius:6px; font-size:11px;" />
+                        <div style="display:flex; gap:6px;">
+                            <button type="submit" name="action" value="valider" style="background:#10B981; color:white; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px;">Accepter</button>
+                            <button type="submit" name="action" value="refuser" style="background:#8d1212; color:white; border:none; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:11px;">Rejeter</button>
+                        </div>
+                    </form>
+                </div>
+
+                {% set ocr = ocr_par_doc.get(doc.id) %}
+                {% if ocr %}
+                <div class="ocr-resultats">
+                    <p class="ocr-titre">Donnees extraites par OCR</p>
+                    <dl class="ocr-liste">
+                        {% if doc.type_document.startswith('billet') %}
+                            <dt>Passager</dt>
+                            <dd>{{ ocr.get('nom_passager') or 'Non detecte' }}</dd>
+                            <dt>Compagnie</dt>
+                            <dd>{{ ocr.get('compagnie_aerienne') or '-' }}</dd>
+                            <dt>Date</dt>
+                            <dd>{{ ocr.get('date_voyage') or 'Non detectee' }}</dd>
+                        {% else %}
+                            {% for cle, valeur in ocr.items() %}
+                            <dt>{{ cle.replace('_', ' ') | capitalize }}</dt>
+                            <dd>{{ valeur if valeur else '-' }}</dd>
+                            {% endfor %}
+                        {% endif %}
+                    </dl>
+                </div>
+                {% elif doc.nom_fichier.endswith('.pdf') %}
+                <p class="ocr-indispo">OCR non disponible pour les PDF</p>
+                {% else %}
+                <p class="ocr-indispo">Pas encore analyse</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if lignes %}
+        <div class="carte">
+            <p class="section-titre">Depenses signalees et justificatifs</p>
+            <table class="tableau-factures">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Libelle</th>
+                        <th class="col-montant">Montant</th>
+                        <th>Justificatif</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ligne in lignes %}
+                    <tr>
+                        <td class="date-ligne">
+                            {{ ligne.date_operation.strftime('%d/%m/%Y') if ligne.date_operation else '-' }}
+                        </td>
+                        <td class="facture-desc">{{ ligne.libelle }}</td>
+                        <td class="col-montant">
+                            {{ "{:,.0f}".format(ligne.montant).replace(',', ' ') }} {{ ligne.devise }}
+                        </td>
+                        <td>
+                            {% if ligne.est_justifiee %}
+                            {% set doc_line = ligne.justificatifs[0] %}
+                            <a href="/document/{{ doc_line.id }}" target="_blank" class="lien-fichier">{{ doc_line.nom_fichier }}</a>
+                            <div style="margin-top:6px; font-size:11px;">
+                                <span>Statut : 
+                                    {% if doc_line.statut == 'valide' %}
+                                    <span style="color:rgb(10, 104, 10); font-weight:bold;">Valide</span>
+                                    {% elif doc_line.statut == 'refuse' %}
+                                    <span style="color:rgb(131, 14, 14); font-weight:bold;">Refuse</span> <br><small style="color:#64748B;">Motif: {{ doc_line.motif_refus }}</small>
+                                    {% else %}
+                                    <span style="color:#64748B; font-weight:bold;">En attente</span>
+                                    {% endif %}
+                                </span>
+                                <form method="POST" action="/admin/document/{{ doc_line.id }}/decision" style="margin-top:4px; display:flex; gap:6px; align-items:center;">
+                                    <input type="text" name="motif_refus" placeholder="Motif si rejet" style="padding:4px; font-size:11px; border:1px solid #E2E8F0; border-radius:4px; width:120px;" />
+                                    <button type="submit" name="action" value="valider" style="background:#10B981; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:11px;">Accepter</button>
+                                    <button type="submit" name="action" value="refuser" style="background:#DC2626; color:white; border:none; border-radius:4px; padding:2px 6px; cursor:pointer; font-size:11px;">Rejeter</button>
+                                </form>
+                            </div>
+                            {% else %}
+                            <span class="justif-manquant">Manquant</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2">Total</td>
+                        <td class="col-montant total">
+                            {{ "{:,.0f}".format(dossier.montant or 0).replace(',', ' ') }} XAF
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="carte">
+            <p class="section-titre">Depenses signalees</p>
+            <div style="background:#F0FDF4; border:1px solid #A7F3D0; border-radius:10px; padding:12px; font-size:12px; color:#065F46;">
+                Aucun depassement reglementaire pour le moment.
+            </div>
+        </div>
+        {% endif %}
+
+        {% if dossier.statut not in ['valide', 'refuse'] %}
+        <div class="carte zone-decision">
+            <p class="section-titre">Decision Dossier Global</p>
+
+            {% if dossier.statut == 'incomplet' %}
+            <div style="background:#FFF8E1; border:1px solid #FFE082; border-radius:10px; padding:10px 14px; font-size:12px; color:#7B5800; margin-bottom:1.25rem; display:flex; align-items:center; gap:8px;">
+                Ce dossier comporte des elements manquants ou refuses par fichier.
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/admin/dossier/{{ dossier.id }}/decision">
+                <div class="champ">
+                    <label for="commentaire">Commentaire (visible par le client)</label>
+                    <textarea id="commentaire" name="commentaire" rows="3" placeholder="Ex : Dossier complet valide ou veuillez remplacer les pieces rejetees ci-dessus."></textarea>
+                </div>
+
+                <div class="boutons-decision">
+                    {% if dossier.statut == 'en_attente' or dossier.statut == 'incomplet' %}
+                    <button type="submit" name="action" value="prendre_en_charge" class="btn-prendre">Prendre en charge</button>
+                    {% endif %}
+
+                    <button type="submit" name="action" value="valider" class="btn-valider" {% if dossier.statut == 'incomplet' %} onclick="return confirm('Ce dossier comporte des pieces non validees. Confirmer la validation globale ?')" {% endif %}>Valider le dossier</button>
+                    <button type="submit" name="action" value="refuser" class="btn-refuser">Refuser le dossier</button>
+                </div>
+            </form>
+        </div>
+        {% elif dossier.commentaire_admin %}
+        <div class="carte">
+            <p class="section-titre">Commentaire enregistre</p>
+            <p class="commentaire-texte">{{ dossier.commentaire_admin }}</p>
+        </div>
+        {% endif %}
+
+        <div class="carte zone-danger">
+            <div>
+                <p class="danger-titre">Supprimer ce dossier</p>
+            </div>
+            <form method="POST" action="/admin/dossier/{{ dossier.id }}/supprimer" onsubmit="return confirm('Supprimer definitivement le dossier {{ dossier.reference }} ?');">
+                <button type="submit" class="btn-supprimer">Supprimer</button>
+            </form>
+        </div>
+
+    </div>
+
+    <footer class="footer">
+        <p>BGFIBank Gabon &copy; 2026 &middot; Espace administration</p>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion au portail Justificatifs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-logo">
+            <img src="{{ url_for('static', filename='BGFI_logo.png') }}" alt="BGFIBank" />
+            <div class="header-info">
+                <div class="header-nom">Portail Justificatifs</div>
+                <div class="header-sous">Service Apurement Monetique</div>
+            </div>
+        </div>
+        <div class="header-right">
+            BGFIBank dans le monde
+        </div>
+    </header>
+
+    <div class="corps">
+        <div class="conteneur">
+
+            <div class="logo-bloc">
+                <p class="logo-titre">Bienvenue sur le portail</p>
+                <p class="logo-sous">Connectez-vous pour acceder a vos dossiers</p>
+            </div>
+
+            <div class="carte">
+                <p class="carte-titre">Connexion a votre espace</p>
+
+                <form method="POST" action="/login">
+
+                    <div class="champ">
+                        <label for="email">Adresse email</label>
+                        <input type="email" id="email" name="email"
+                               placeholder="votre@email.com" required />
+                    </div>
+
+                    <div class="champ">
+                        <label for="mot_de_passe">Mot de passe</label>
+                        <input type="password" id="mot_de_passe" name="mot_de_passe"
+                               placeholder="********" required />
+                    </div>
+
+                    {% if erreur %}
+                    <div class="message-erreur">{{ erreur }}</div>
+                    {% endif %}
+
+                    <button type="submit" class="btn-connexion">Se connecter</button>
+
+                </form>
+
+                <div class="note-acces">
+                    Votre espace est cree par la banque a reception de vos depassements.
+                    Vous recevez par email un lien pour definir votre mot de passe.
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>BGFIBank Gabon &copy; 2026 &middot; Plateforme securisee &middot; Donnees chiffrees</p>
+    </footer>
+
+</body>
+</html>
