@@ -240,20 +240,73 @@
 
     {% if modifiable %}
     <script>
-        function brancherAffichageNom(input) {
-            input.addEventListener('change', function () {
-                var conteneur = input.closest('.facture-fichier');
-                var affichage = conteneur.querySelector('.fichier-choisi-petit');
-                if (input.files.length > 0) {
-                    affichage.textContent = input.files[0].name;
+        document.addEventListener('DOMContentLoaded', function() {
+            const dossierId = "{{ dossier.id }}";
+            
+            // 1. Gérer l'upload asynchrone des documents de voyage
+            const champsUploadVoyage = document.querySelectorAll('input[name="passeport"], input[name="billet_aller"], input[name="billet_retour"]');
+
+            champsUploadVoyage.forEach(input => {
+                input.addEventListener('change', async function() {
+                    if (!this.files.length) return;
+                    
+                    const file = this.files[0];
+                    const typeDocument = this.name;
+                    const formData = new FormData();
+                    
+                    formData.append('file', file);
+                    formData.append('type_document', typeDocument);
+                    
+                    // Indiquer le statut du chargement
+                    const conteneur = this.closest('.facture-fichier');
+                    const affichage = conteneur.querySelector('.fichier-choisi-petit');
+                    affichage.textContent = "Upload et IA en cours...";
+                    affichage.style.color = "#3B82F6";
                     affichage.classList.add('a-fichier');
-                } else {
-                    affichage.textContent = affichage.dataset.defaut;
-                    affichage.classList.remove('a-fichier');
-                }
+                    
+                    try {
+                        const response = await fetch(`/dossier/${dossierId}/upload_async`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            // En cas de succès, on recharge la page pour déclencher le bloc HTML Jinja qui rafraîchit toutes les 4s
+                            window.location.reload();
+                        } else {
+                            const result = await response.json();
+                            alert("Erreur : " + result.erreur);
+                            affichage.textContent = file.name;
+                            affichage.style.color = "";
+                        }
+                    } catch (error) {
+                        console.error("Erreur réseau :", error);
+                        alert("Une erreur est survenue lors de l'envoi.");
+                        affichage.textContent = file.name;
+                        affichage.style.color = "";
+                    }
+                });
             });
-        }
-        document.querySelectorAll('input[type="file"]').forEach(brancherAffichageNom);
+
+            // 2. Gérer l'affichage visuel classique des noms de fichiers pour les autres justificatifs
+            function brancherAffichageNom(input) {
+                // Ne s'applique pas aux docs de voyage qui sont envoyés instantanément
+                if (['passeport', 'billet_aller', 'billet_retour'].includes(input.name)) return;
+
+                input.addEventListener('change', function () {
+                    var conteneur = input.closest('.facture-fichier');
+                    var affichage = conteneur.querySelector('.fichier-choisi-petit');
+                    if (input.files.length > 0) {
+                        affichage.textContent = input.files[0].name;
+                        affichage.classList.add('a-fichier');
+                    } else {
+                        affichage.textContent = affichage.dataset.defaut;
+                        affichage.classList.remove('a-fichier');
+                    }
+                });
+            }
+            document.querySelectorAll('input[type="file"]').forEach(brancherAffichageNom);
+        });
     </script>
     {% endif %}
 
