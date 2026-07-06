@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from flask import (Flask, render_template, request, redirect, url_for,
-                   session, send_file, flash)
+                   session, send_file, flash, jsonify)
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 import os
 import re
@@ -70,18 +70,58 @@ def _extraire_dates_ocr(resultat_ocr):
     dates = []
     if not isinstance(resultat_ocr, dict):
         return dates
+    
     valeurs_brutes = []
     if resultat_ocr.get('toutes_les_dates_detectees'):
         valeurs_brutes.extend(resultat_ocr.get('toutes_les_dates_detectees'))
     elif resultat_ocr.get('date_voyage'):
         valeurs_brutes.append(resultat_ocr.get('date_voyage'))
+        
+    mois_map = {
+        'JAN': 1, 'JANV': 1, 'JANUARY': 1, 'FEB': 2, 'FEV': 2, 'FEBRUARY': 2,
+        'MAR': 3, 'MARS': 3, 'MARCH': 3, 'APR': 4, 'AVR': 4, 'APRIL': 4,
+        'MAY': 5, 'MAI': 5, 'JUN': 6, 'JUIN': 6, 'JUNE': 6,
+        'JUL': 7, 'JUIL': 7, 'JULY': 7, 'AUG': 8, 'AOU': 8, 'AUGUST': 8,
+        'SEP': 9, 'SEPTEMBER': 9, 'OCT': 10, 'OCTOBER': 10,
+        'NOV': 11, 'NOVEMBER': 11, 'DEC': 12, 'DECEMBER': 12
+    }
+
     for val in valeurs_brutes:
+        val_str = str(val).strip().upper()
+        date_parse = None
+
         for fmt in ('%d.%m.%Y', '%d/%m/%Y', '%Y-%m-%d'):
             try:
-                dates.append(datetime.strptime(str(val).strip(), fmt))
+                date_parse = datetime.strptime(val_str, fmt)
                 break
             except ValueError:
                 continue
+
+        if not date_parse:
+            match = re.search(r'(\d{1,2})\s*([A-Z]{3,10})\s*(\d{2,4})?', val_str)
+            if match:
+                jour = int(match.group(1))
+                mois_str = match.group(2)
+                annee_str = match.group(3)
+
+                mois = None
+                for cle_mois, num_mois in mois_map.items():
+                    if cle_mois in mois_str:
+                        mois = num_mois
+                        break
+
+                if mois:
+                    annee = int(annee_str) if annee_str else datetime.now(timezone.utc).year
+                    if annee < 100:
+                        annee += 2000
+                    try:
+                        date_parse = datetime(annee, mois, jour)
+                    except ValueError:
+                        pass
+
+        if date_parse:
+            dates.append(date_parse)
+            
     return dates
 
 # =========================================================
@@ -97,7 +137,7 @@ class Utilisateur(db.Model):
     actif            = db.Column(db.Boolean, default=False)
     token_activation = db.Column(db.String(100), unique=True)
     role             = db.Column(db.String(20), default='client')
-    date_creation    = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     dossiers         = db.relationship('Dossier', backref='client', lazy=True)
 
 class Dossier(db.Model):
@@ -111,8 +151,8 @@ class Dossier(db.Model):
     date_fin_voyage   = db.Column(db.DateTime)
     commentaire_admin = db.Column(db.Text)
     a_ete_mis_a_jour  = db.Column(db.Boolean, default=False)
-    date_creation     = db.Column(db.DateTime, default=datetime.utcnow)
-    date_mise_a_jour  = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation     = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    date_mise_a_jour  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     utilisateur_id    = db.Column(db.Integer, db.ForeignKey('utilisateur.id'), nullable=False)
     lignes            = db.relationship('LigneTransaction', backref='dossier', lazy=True, cascade='all, delete-orphan')
     documents         = db.relationship('Document', backref='dossier', lazy=True, cascade='all, delete-orphan')
@@ -138,7 +178,7 @@ class Document(db.Model):
     donnees_ocr   = db.Column(db.Text)
     statut        = db.Column(db.String(20), default='en_attente')
     motif_refus   = db.Column(db.Text)
-    date_upload   = db.Column(db.DateTime, default=datetime.utcnow)
+    date_upload   = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     dossier_id    = db.Column(db.Integer, db.ForeignKey('dossier.id'), nullable=False)
     ligne_id      = db.Column(db.Integer, db.ForeignKey('ligne_transaction.id'))
 
@@ -214,13 +254,8 @@ def _importer_fichier(chemin, type_dossier, periode=None, base_url='http://127.0
     df[COL_EMAIL] = df[COL_EMAIL].astype(str).str.strip().str.lower()
     df = df[df[COL_EMAIL].str.contains("@", na=False)].copy()
     
-    # -------------------------------------------------------------
-    # CORRECTION DES FUSEAUX HORAIRES 
-    # -------------------------------------------------------------
     df[COL_DATE] = pd.to_datetime(df[COL_DATE], errors="coerce")
-    # On supprime le timezone de Pandas pour qu'il soit compatible avec SQLite
     df[COL_DATE] = df[COL_DATE].apply(lambda x: x.replace(tzinfo=None) if pd.notna(x) else x)
-    
     df[COL_MONTANT] = pd.to_numeric(df[COL_MONTANT], errors="coerce")
 
     df = df.sort_values(by=[COL_EMAIL, COL_DATE])
@@ -252,25 +287,21 @@ def _importer_fichier(chemin, type_dossier, periode=None, base_url='http://127.0
 
         if type_dossier == 'voyage':
             candidats = Dossier.query.filter_by(utilisateur_id=utilisateur.id, type_dossier='voyage').all()
-            
             for cand in candidats:
                 if cand.date_debut_voyage and cand.date_fin_voyage:
-                    # Marge de 15 jours sur les dates du voyage pour les transactions tardives
                     if (cand.date_debut_voyage - timedelta(days=15)) <= min_date <= (cand.date_fin_voyage + timedelta(days=15)):
                         dossier = cand
                         break
                 elif cand.statut in ('incomplet', 'en_attente', 'en_cours'):
                     dossier = cand
                     break
-            
             if not dossier:
                 ref = f"DOC-{min_date.year}-VY{uuid.uuid4().hex[:5].upper()}"
                 dossier = Dossier(reference=ref, type_dossier='voyage', periode=min_date.strftime('%Y-%m'), montant=0.0, statut='incomplet', utilisateur_id=utilisateur.id)
                 db.session.add(dossier)
                 resume["dossiers_crees"] += 1
             else:
-                if dossier.statut in ('valide', 'refuse'):
-                    dossier.statut = 'incomplet'
+                if dossier.statut in ('valide', 'refuse'): dossier.statut = 'incomplet'
                 resume["dossiers_actualises"] += 1
 
         else:
@@ -281,8 +312,7 @@ def _importer_fichier(chemin, type_dossier, periode=None, base_url='http://127.0
                 db.session.add(dossier)
                 resume["dossiers_crees"] += 1
             else:
-                if dossier.statut in ('valide', 'refuse'):
-                    dossier.statut = 'incomplet'
+                if dossier.statut in ('valide', 'refuse'): dossier.statut = 'incomplet'
                 resume["dossiers_actualises"] += 1
         
         db.session.commit()
@@ -298,7 +328,6 @@ def _importer_fichier(chemin, type_dossier, periode=None, base_url='http://127.0
             mnt = float(row[COL_MONTANT]) if pd.notna(row[COL_MONTANT]) else 0.0
             
             key = (date_op.strftime('%Y-%m-%d') if date_op else '', lib, mnt)
-            
             if key not in existing_lines:
                 db.session.add(LigneTransaction(date_operation=date_op, libelle=lib[:300], montant=mnt, dossier_id=dossier.id))
                 existing_lines.add(key)
@@ -374,7 +403,7 @@ def dashboard():
 @app.route('/dossier/anticiper-voyage', methods=['POST'])
 @login_requis
 def anticiper_voyage():
-    ref = f"DOC-{datetime.now().year}-VY{uuid.uuid4().hex[:5].upper()}"
+    ref = f"DOC-{datetime.now(timezone.utc).year}-VY{uuid.uuid4().hex[:5].upper()}"
     nouveau_voyage = Dossier(reference=ref, type_dossier='voyage', statut='incomplet', utilisateur_id=session['utilisateur_id'], montant=0.0)
     db.session.add(nouveau_voyage)
     db.session.commit()
@@ -415,54 +444,114 @@ def detail_dossier(dossier_id):
         icones={'passeport': 'ID', 'billet_aller': 'AV', 'billet_retour': 'AV'}
     )
 
-def tache_ocr_background(app_context, doc_id, champ):
-    with app_context:
+def tache_ocr_background(app, doc_id, champ):
+    with app.app_context():
         doc = Document.query.get(doc_id)
         if not doc: return
-        dossier, chemin, statut_doc, motif = doc.dossier, doc.chemin, 'en_attente', None
+        dossier = doc.dossier
+        chemin_absolu = os.path.abspath(doc.chemin)
+        statut_doc, motif = 'en_attente', None
         donnees_ocr_json = None
+        
         try:
             if champ == 'passeport':
-                res = obtenir_parser_passeport().process_document(chemin)
+                res = obtenir_parser_passeport().process_document(chemin_absolu)
                 if res:
                     donnees_ocr_json = json.dumps(res, ensure_ascii=False)
                     if res.get('date_expiration'):
                         try:
                             d_exp = datetime.strptime(res['date_expiration'], '%d.%m.%Y')
-                            if d_exp < datetime.now(): statut_doc, motif = 'refuse', f"Expiré depuis {res['date_expiration']}"
-                            else: statut_doc = 'valide'
+                            if d_exp < datetime.now(): 
+                                statut_doc, motif = 'refuse', f"Expiré depuis le {res['date_expiration']}"
+                            else: 
+                                statut_doc = 'valide'
                         except: pass
-                    else: statut_doc, motif = 'refuse', "Date d'expiration illisible."
+                    else: 
+                        statut_doc, motif = 'refuse', "Date d'expiration illisible par l'IA."
+                else: 
+                    statut_doc, motif = 'refuse', "Passeport non détecté (chemin introuvable ou image trop floue)."
+                    
             elif champ in ('billet_aller', 'billet_retour'):
-                res = obtenir_parser_billet().traiter_document(chemin)
+                res = obtenir_parser_billet().traiter_document(chemin_absolu)
                 if res:
                     donnees_ocr_json = json.dumps(res, ensure_ascii=False)
                     dates_tr = _extraire_dates_ocr(res)
                     if dates_tr:
-                        m_bil = min(dates_tr)
-                        d_trans = [l.date_operation for l in dossier.lignes if l.date_operation]
-                        if d_trans and m_bil > min(d_trans): statut_doc, motif = 'refuse', "Dates postérieures aux transactions."
-                        else: statut_doc = 'valide'
+                        m_bil = min(dates_tr).replace(tzinfo=None)
+                        d_trans = [l.date_operation.replace(tzinfo=None) for l in dossier.lignes if l.date_operation]
                         
-                        toutes_dates_ocr = dates_tr.copy()
+                        if d_trans and m_bil > min(d_trans): 
+                            statut_doc, motif = 'refuse', "Dates de vol postérieures aux transactions."
+                        else: 
+                            statut_doc = 'valide'
+                        
+                        toutes_dates_ocr = [d.replace(tzinfo=None) for d in dates_tr]
                         for d in dossier.documents:
                             if d.id != doc.id and d.donnees_ocr and d.type_document.startswith('billet'):
                                 try:
                                     data = json.loads(d.donnees_ocr)
-                                    toutes_dates_ocr.extend(_extraire_dates_ocr(data))
+                                    toutes_dates_ocr.extend([dt.replace(tzinfo=None) for dt in _extraire_dates_ocr(data)])
                                 except: pass
                         if toutes_dates_ocr:
                             dossier.date_debut_voyage = min(toutes_dates_ocr)
                             dossier.date_fin_voyage = max(toutes_dates_ocr)
                             dossier.periode = dossier.date_debut_voyage.strftime('%Y-%m')
-                    else: statut_doc, motif = 'refuse', "Aucune date lisible."
-        except Exception as e: pass
+                    else: 
+                        statut_doc, motif = 'refuse', "Aucune date de voyage lisible sur ce billet."
+                else: 
+                    statut_doc, motif = 'refuse', "Billet non détecté (chemin introuvable ou format non reconnu)."
+                    
+        except Exception as e: 
+            statut_doc, motif = 'refuse', f"Erreur système IA : {str(e)}"
 
         doc.statut, doc.motif_refus, doc.donnees_ocr = statut_doc, motif, donnees_ocr_json
         db.session.commit()
         _recalculer_statut(dossier)
-        dossier.date_mise_a_jour = datetime.utcnow()
+        dossier.date_mise_a_jour = datetime.now(timezone.utc)
         db.session.commit()
+
+# --- NOUVELLE ROUTE POUR L'UPLOAD AJAX ---
+@app.route('/dossier/<int:dossier_id>/upload_async', methods=['POST'])
+@login_requis
+def upload_async(dossier_id):
+    dossier = Dossier.query.get_or_404(dossier_id)
+    if dossier.utilisateur_id != session['utilisateur_id'] or dossier.statut not in ('incomplet', 'en_attente', 'en_cours'):
+        return jsonify({'erreur': 'Non autorisé'}), 403
+
+    champ = request.form.get('type_document')
+    f = request.files.get('file')
+
+    if not f or not extension_valide(f.filename):
+        return jsonify({'erreur': 'Fichier invalide ou format non supporté'}), 400
+
+    if champ not in ('passeport', 'billet_aller', 'billet_retour'):
+        return jsonify({'erreur': 'Type de document invalide'}), 400
+
+    rep = chemin_dossier_upload(dossier.utilisateur_id, dossier.reference)
+    par_type = _docs_dossier(dossier)
+    
+    if champ in par_type:
+        try: os.remove(par_type[champ].chemin)
+        except: pass
+        db.session.delete(par_type[champ])
+        db.session.commit()
+
+    chemin = os.path.join(rep, f"{champ}_{secure_filename(f.filename)}")
+    f.save(chemin)
+    
+    doc = Document(nom_fichier=os.path.basename(chemin), type_document=champ, chemin=chemin, dossier_id=dossier.id)
+    db.session.add(doc)
+    dossier.a_ete_mis_a_jour = True
+    db.session.commit()
+    
+    if est_image(doc.nom_fichier):
+        threading.Thread(target=tache_ocr_background, args=(app, doc.id, champ)).start()
+
+    _recalculer_statut(dossier)
+    dossier.date_mise_a_jour = datetime.now(timezone.utc)
+    db.session.commit()
+
+    return jsonify({'message': 'Document reçu', 'doc_id': doc.id})
 
 @app.route('/dossier/<int:dossier_id>/justifier', methods=['POST'])
 @login_requis
@@ -479,7 +568,6 @@ def justifier_dossier(dossier_id):
         if not (dossier.date_debut_voyage and dossier.date_fin_voyage):
             d_aller_manuelle = request.form.get('date_aller_manuelle')
             d_retour_manuelle = request.form.get('date_retour_manuelle')
-            
             if d_aller_manuelle:
                 try: 
                     dossier.date_debut_voyage = datetime.strptime(d_aller_manuelle, '%Y-%m-%d')
@@ -489,6 +577,7 @@ def justifier_dossier(dossier_id):
                 try: dossier.date_fin_voyage = datetime.strptime(d_retour_manuelle, '%Y-%m-%d')
                 except ValueError: pass
 
+        # Les documents voyage peuvent encore être traités ici si on utilise le formulaire classique
         for champ in ('passeport', 'billet_aller', 'billet_retour'):
             f = request.files.get(champ)
             if not f or not extension_valide(f.filename): continue
@@ -501,7 +590,7 @@ def justifier_dossier(dossier_id):
             doc = Document(nom_fichier=os.path.basename(chemin), type_document=champ, chemin=chemin, dossier_id=dossier.id)
             db.session.add(doc)
             db.session.commit()
-            if est_image(doc.nom_fichier): threading.Thread(target=tache_ocr_background, args=(app.app_context(), doc.id, champ)).start()
+            if est_image(doc.nom_fichier): threading.Thread(target=tache_ocr_background, args=(app, doc.id, champ)).start()
             maj = True
 
     for ligne in dossier.lignes:
@@ -519,7 +608,7 @@ def justifier_dossier(dossier_id):
     if maj: dossier.a_ete_mis_a_jour = True
     db.session.commit()
     _recalculer_statut(dossier)
-    dossier.date_mise_a_jour = datetime.utcnow()
+    dossier.date_mise_a_jour = datetime.now(timezone.utc)
     db.session.commit()
     return redirect(url_for('detail_dossier', dossier_id=dossier.id))
 
@@ -653,7 +742,6 @@ def creer_admin():
         ))
         db.session.commit()
         flash(f"Administrateur {prenom} {nom} cree.", 'ok')
-
     return redirect(url_for('admin_utilisateurs'))
 
 def _nb_admins_actifs():
@@ -663,41 +751,39 @@ def _nb_admins_actifs():
 @admin_requis
 def basculer_admin(utilisateur_id):
     cible = Utilisateur.query.get_or_404(utilisateur_id)
-
-    if cible.role != 'admin':
-        flash("Action reservee aux administrateurs.", 'erreur')
-    elif cible.id == session['utilisateur_id']:
-        flash("Vous ne pouvez pas modifier votre propre compte.", 'erreur')
-    elif cible.actif and _nb_admins_actifs() <= 1:
-        flash("Impossible : il doit rester au moins un administrateur actif.", 'erreur')
+    if cible.role != 'admin': flash("Action reservee aux administrateurs.", 'erreur')
+    elif cible.id == session['utilisateur_id']: flash("Vous ne pouvez pas modifier votre propre compte.", 'erreur')
+    elif cible.actif and _nb_admins_actifs() <= 1: flash("Impossible : il doit rester au moins un administrateur actif.", 'erreur')
     else:
         cible.actif = not cible.actif
         db.session.commit()
         etat = "active" if cible.actif else "desactive"
         flash(f"Compte de {cible.prenom} {cible.nom} {etat}.", 'ok')
-
     return redirect(url_for('admin_utilisateurs'))
 
 @app.route('/admin/utilisateurs/<int:utilisateur_id>/supprimer', methods=['POST'])
 @admin_requis
 def supprimer_admin(utilisateur_id):
     cible = Utilisateur.query.get_or_404(utilisateur_id)
-
-    if cible.role != 'admin':
-        flash("Action reservee aux administrateurs.", 'erreur')
-    elif cible.id == session['utilisateur_id']:
-        flash("Vous ne pouvez pas supprimer votre propre compte.", 'erreur')
-    elif cible.actif and _nb_admins_actifs() <= 1:
-        flash("Impossible : il doit rester au moins un administrateur actif.", 'erreur')
+    if cible.role != 'admin': flash("Action reservee aux administrateurs.", 'erreur')
+    elif cible.id == session['utilisateur_id']: flash("Vous ne pouvez pas supprimer votre propre compte.", 'erreur')
+    elif cible.actif and _nb_admins_actifs() <= 1: flash("Impossible : il doit rester au moins un administrateur actif.", 'erreur')
     else:
         nom = f"{cible.prenom} {cible.nom}"
         db.session.delete(cible)
         db.session.commit()
         flash(f"Administrateur {nom} supprime.", 'ok')
-
     return redirect(url_for('admin_utilisateurs'))
 
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     with app.app_context(): db.create_all()
-    app.run(debug=True)
+    app.run(
+        debug=True,
+        use_reloader=False,
+        exclude_patterns=[
+            '*/site-packages/*',
+            '*/paddle/*',
+            '*/paddlex/*',
+        ]
+    )
