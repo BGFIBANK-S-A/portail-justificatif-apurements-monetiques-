@@ -1,0 +1,17 @@
+# Base de donnees locale (contient des donnees clients reelles)
+instance/
+*.db
+*.sqlite3
+
+# Fichiers uploades par les clients (documents d'identite, justificatifs, imports)
+uploads/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environnement
+.env
+venv/
+.venv/
