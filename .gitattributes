@@ -1,0 +1,8 @@
+# Force des fins de ligne Unix (LF) pour les fichiers executes tels quels
+# dans les conteneurs Docker (Linux), quel que soit le core.autocrlf de la
+# machine qui checkout le depot (Windows convertit sinon en CRLF, ce qui
+# casse le shebang des scripts shell : "exec /entrypoint.sh: no such file
+# or directory" alors que le fichier existe bel et bien).
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.conf text eol=lf
