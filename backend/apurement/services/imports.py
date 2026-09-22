@@ -385,6 +385,16 @@ def importer_portefeuille(chemin, progress_cb=None):
     resume = {"agences_creees": 0, "crc_crees": 0, "clients_relies": 0, "clients_introuvables": [], "crc_a_completer": []}
     total = len(df)
 
+    # Un meme code_agence / code_gestionnaire revient sur de tres nombreuses
+    # lignes (tous les clients d'un meme CRC, tous les CRC d'une meme
+    # agence) : on met en cache les objets deja resolus pendant cet import
+    # pour eviter une requete SQL redondante a chaque ligne, ce qui est ce
+    # qui provoquait un WORKER TIMEOUT gunicorn sur les fichiers portefeuille
+    # volumineux (une transaction unique, des milliers de lignes).
+    cache_agences_par_code = {}
+    cache_agences_par_nom = {}
+    cache_crc_par_gestionnaire = {}
+
     for i, (_, row) in enumerate(df.iterrows(), start=1):
         code_agence = _normaliser_code(row.get(COL_CODE_AGENCE))
         code_gestionnaire = _normaliser_code(row.get(COL_CODE_GESTIONNAIRE))
@@ -398,37 +408,45 @@ def importer_portefeuille(chemin, progress_cb=None):
         nom_gestionnaire = str(row.get(COL_NOM_GESTIONNAIRE, "")).strip() or code_gestionnaire
         nom_client = str(row.get(COL_NOM_CLIENT_PORTEFEUILLE, "")).strip()
 
-        agence = Agence.objects.filter(code_agence=code_agence).first()
+        agence = cache_agences_par_code.get(code_agence)
         if not agence:
-            # Le nom d'agence n'est pas toujours discriminant (ex : plusieurs
-            # codes agence partagent le meme intitule generique dans le
-            # fichier portefeuille, "Agence Centrale" par exemple) : on
-            # reutilise l'agence existante de ce nom plutot que d'echouer sur
-            # la contrainte d'unicite de Agence.nom.
-            agence = Agence.objects.filter(nom=nom_agence).first()
-            if agence:
-                if not agence.code_agence:
-                    agence.code_agence = code_agence
-                    agence.save()
-            else:
-                agence = Agence.objects.create(nom=nom_agence, code_agence=code_agence)
-                resume["agences_creees"] += 1
+            agence = Agence.objects.filter(code_agence=code_agence).first()
+            if not agence:
+                # Le nom d'agence n'est pas toujours discriminant (ex :
+                # plusieurs codes agence partagent le meme intitule generique
+                # dans le fichier portefeuille, "Agence Centrale" par
+                # exemple) : on reutilise l'agence existante de ce nom
+                # plutot que d'echouer sur la contrainte d'unicite de
+                # Agence.nom.
+                agence = cache_agences_par_nom.get(nom_agence) or Agence.objects.filter(nom=nom_agence).first()
+                if agence:
+                    if not agence.code_agence:
+                        agence.code_agence = code_agence
+                        agence.save()
+                else:
+                    agence = Agence.objects.create(nom=nom_agence, code_agence=code_agence)
+                    resume["agences_creees"] += 1
+            cache_agences_par_code[code_agence] = agence
+            cache_agences_par_nom[nom_agence] = agence
 
-        crc = Utilisateur.objects.filter(code_gestionnaire=code_gestionnaire, role="crc").first()
+        crc = cache_crc_par_gestionnaire.get(code_gestionnaire)
         if not crc:
-            nom_p, prenom_p = _separer_nom(nom_gestionnaire)
-            email_provisoire = f"crc-{re.sub(r'[^a-z0-9]', '', code_gestionnaire.lower())}@a-completer.bgfi.ga"
-            crc = Utilisateur.objects.create(
-                nom=nom_p, prenom=prenom_p, email=email_provisoire, role="crc",
-                actif=False, agence=agence, code_gestionnaire=code_gestionnaire,
-            )
-            resume["crc_crees"] += 1
-            resume["crc_a_completer"].append({
-                "nom": f"{prenom_p} {nom_p}", "code_gestionnaire": code_gestionnaire, "email_provisoire": email_provisoire,
-            })
-        elif crc.agence_id != agence.id:
-            crc.agence = agence
-            crc.save()
+            crc = Utilisateur.objects.filter(code_gestionnaire=code_gestionnaire, role="crc").first()
+            if not crc:
+                nom_p, prenom_p = _separer_nom(nom_gestionnaire)
+                email_provisoire = f"crc-{re.sub(r'[^a-z0-9]', '', code_gestionnaire.lower())}@a-completer.bgfi.ga"
+                crc = Utilisateur.objects.create(
+                    nom=nom_p, prenom=prenom_p, email=email_provisoire, role="crc",
+                    actif=False, agence=agence, code_gestionnaire=code_gestionnaire,
+                )
+                resume["crc_crees"] += 1
+                resume["crc_a_completer"].append({
+                    "nom": f"{prenom_p} {nom_p}", "code_gestionnaire": code_gestionnaire, "email_provisoire": email_provisoire,
+                })
+            elif crc.agence_id != agence.id:
+                crc.agence = agence
+                crc.save()
+            cache_crc_par_gestionnaire[code_gestionnaire] = crc
 
         date_edition = str(row.get("date_edition", "")).strip()
         entree = PortefeuilleEntree.objects.filter(code_client=code_client).first()
