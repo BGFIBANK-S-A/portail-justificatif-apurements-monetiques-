@@ -15,6 +15,7 @@ class UtilisateurSerializer(serializers.ModelSerializer):
         fields = (
             "id", "nom", "prenom", "email", "role", "actif", "suspendu",
             "code_client", "code_gestionnaire", "telephone", "date_creation",
+            "motif_suspension", "date_suspension",
         )
 
 

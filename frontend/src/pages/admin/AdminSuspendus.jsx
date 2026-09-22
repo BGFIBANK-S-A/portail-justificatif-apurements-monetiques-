@@ -1,0 +1,59 @@
+import { useEffect, useState } from 'react'
+import { Alert, Button, Card, Table } from 'react-bootstrap'
+import api from '../../api/client'
+import MiseEnPage from '../../components/MiseEnPage'
+
+export default function AdminSuspendus() {
+  const [clients, setClients] = useState(null)
+  const [erreur, setErreur] = useState(null)
+
+  function charger() {
+    api.get('/admin/suspendus/').then((res) => setClients(res.data)).catch(() => setErreur('Impossible de charger les clients suspendus.'))
+  }
+
+  useEffect(() => { charger() }, [])
+
+  async function onReactiver(id) {
+    if (!confirm('Reactiver ce client ?')) return
+    await api.post(`/admin/clients/${id}/reactiver/`)
+    charger()
+  }
+
+  if (erreur) return <MiseEnPage><Alert variant="danger">{erreur}</Alert></MiseEnPage>
+  if (!clients) return <MiseEnPage>Chargement...</MiseEnPage>
+
+  return (
+    <MiseEnPage titre="Clients suspendus">
+      <h2 className="mb-3">Clients suspendus ({clients.length})</h2>
+      <p className="text-body-secondary fs-10">
+        Suspension automatique conformement a la LC BEAC 004/GR/2022 : justificatifs non transmis dans le delai
+        de 8 jours suivant la mise en demeure (elle-meme declenchee 30 jours apres la 1ere operation).
+      </p>
+
+      <Card>
+        <Card.Body className="p-0">
+          {clients.length === 0 ? (
+            <p className="text-body-secondary p-3 mb-0">Aucun client suspendu.</p>
+          ) : (
+            <div className="table-responsive">
+              <Table hover className="mb-0">
+                <thead className="bg-body-tertiary"><tr><th>Client</th><th>Email</th><th>Motif</th><th>Date</th><th></th></tr></thead>
+                <tbody>
+                  {clients.map((c) => (
+                    <tr key={c.id}>
+                      <td>{c.prenom} {c.nom}</td>
+                      <td>{c.email}</td>
+                      <td>{c.motif_suspension || '-'}</td>
+                      <td className="text-nowrap">{c.date_suspension ? new Date(c.date_suspension).toLocaleDateString('fr-FR') : '-'}</td>
+                      <td><Button size="sm" variant="outline-success" onClick={() => onReactiver(c.id)}>Reactiver</Button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          )}
+        </Card.Body>
+      </Card>
+    </MiseEnPage>
+  )
+}

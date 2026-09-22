@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-0}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      DOCUMENTS_ENCRYPTION_KEY: ${DOCUMENTS_ENCRYPTION_KEY}
+      BASE_URL: ${BASE_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      SESSION_LIFETIME_MINUTES: ${SESSION_LIFETIME_MINUTES:-30}
+      ACTIVATION_DUREE_VALIDITE_JOURS: ${ACTIVATION_DUREE_VALIDITE_JOURS:-15}
+      DELAI_JUSTIFICATION_JOURS: ${DELAI_JUSTIFICATION_JOURS:-30}
+      DELAI_MISE_EN_DEMEURE_JOURS: ${DELAI_MISE_EN_DEMEURE_JOURS:-8}
+      SEUIL_VOYAGE_XAF: ${SEUIL_VOYAGE_XAF:-5000000}
+      SEUIL_LIGNE_XAF: ${SEUIL_LIGNE_XAF:-1000000}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@bgfi.ga}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-0}
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:
+  uploads_data:
