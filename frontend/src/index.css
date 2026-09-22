@@ -1,0 +1,139 @@
+/* Ajustements specifiques a l'application, en complement du theme Falcon
+   (src/assets/scss/theme.scss) : celui-ci fournit deja la quasi-totalite
+   du design system (couleurs, cartes, tableaux, badges, formulaires...).
+   Direction "corporate bancaire classique" : bordures nettes, coins peu
+   arrondis, accent or reserve aux etats/actifs. */
+
+.min-vh-100-auth {
+  min-height: 100vh;
+}
+
+/* Sidebar verticale : fond blanc, separateur net (bordure visible plutot
+   qu'une ombre floue), esthetique de portail bancaire institutionnel. */
+.navbar-vertical {
+  background-color: #fff;
+}
+@media (min-width: 1200px) {
+  .navbar-vertical {
+    border-right: 1px solid #d7dde6;
+  }
+}
+@media (max-width: 1199.98px) {
+  .navbar-vertical .navbar-collapse.show,
+  .navbar-vertical .navbar-collapse.collapsing {
+    background-color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Element de navigation actif : bande verticale "or bancaire" a gauche,
+   fond navy attenue, plutot qu'un simple changement de couleur de texte. */
+.navbar-vertical .nav-link {
+  border-radius: 0;
+  border-left: 3px solid transparent;
+}
+.navbar-vertical .nav-link.active {
+  background-color: rgba(13, 43, 78, 0.06);
+  border-left-color: #96792c;
+  font-weight: 600;
+}
+
+/* Barre superieure : navy plein, texte blanc — bandeau institutionnel
+   plutot que la barre "glass" translucide par defaut du theme. */
+.navbar-top-institutionnelle {
+  background-color: var(--falcon-primary, #0d2b4e) !important;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.navbar-top-institutionnelle .btn-link {
+  color: #fff;
+}
+
+.badge-statut {
+  text-transform: none;
+}
+
+.upload-tile {
+  border: 1px solid #d7dde6;
+  border-radius: var(--falcon-border-radius, 0.1875rem);
+  padding: 0.75rem;
+  height: 100%;
+}
+
+/* Icones carrees utilisees dans les cartes de resume (import, tableaux de
+   bord...) : registre sobre plutot que des pastilles rondes colorees. */
+.icone-carte {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--falcon-border-radius-sm, 0.125rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 43, 78, 0.08);
+  color: var(--falcon-primary, #0d2b4e);
+  border: 1px solid rgba(13, 43, 78, 0.15);
+  flex: none;
+  font-size: 16px;
+}
+.icone-carte-violet { background: rgba(150, 121, 44, 0.1); color: #96792c; border-color: rgba(150, 121, 44, 0.25); }
+.icone-carte-succes { background: rgba(25, 135, 84, 0.1); color: #198754; border-color: rgba(25, 135, 84, 0.25); }
+.icone-carte-alerte { background: rgba(166, 105, 6, 0.12); color: #a66906; border-color: rgba(166, 105, 6, 0.25); }
+
+.carte-accent { border-top: 3px solid var(--falcon-primary, #0d2b4e); }
+.carte-accent-violet { border-top-color: #96792c; }
+.carte-accent-succes { border-top-color: #198754; }
+.carte-accent-alerte { border-top-color: #a66906; }
+
+.stat-tuile {
+  border: 1px solid #d7dde6;
+  border-radius: var(--falcon-border-radius, 0.1875rem);
+  padding: 0.6rem;
+  text-align: center;
+}
+
+/* Zone de depot de fichier (import), plus explicite qu'un simple input file. */
+.zone-depot {
+  border: 1px dashed #b6c0cf;
+  border-radius: var(--falcon-border-radius, 0.1875rem);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: #f7f9fc;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.zone-depot:hover,
+.zone-depot.zone-depot-active {
+  border-color: var(--falcon-primary, #0d2b4e);
+  background: rgba(13, 43, 78, 0.04);
+}
+.zone-depot input[type="file"] { display: none; }
+.zone-depot-compacte {
+  padding: 0.75rem;
+}
+
+/* Carte d'authentification : bandeau navy plein (pas de degrade), coins
+   nets, sans effet de carte flottante — registre document officiel. */
+.auth-logo-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--falcon-border-radius-sm, 0.125rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin: 0 auto 14px;
+}
+.auth-logo-badge img { width: 36px; height: auto; }
+
+.auth-header-bande {
+  background: var(--falcon-primary, #0d2b4e);
+  padding: 28px 24px;
+  text-align: center;
+  color: #fff;
+  border-bottom: 3px solid #96792c;
+  margin: calc(-1 * var(--falcon-card-spacer-y, 1.25rem)) calc(-1 * var(--falcon-card-spacer-x, 1.25rem)) 0;
+}
+.auth-card-corps {
+  background: var(--falcon-card-bg, #fff);
+  position: relative;
+}
