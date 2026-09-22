@@ -17,7 +17,11 @@ COPY . .
 RUN mkdir -p /app/uploads /app/staticfiles
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Retire les retours chariot (\r) au cas ou le fichier aurait ete checkout
+# avec des fins de ligne Windows (CRLF) : un shebang "#!/bin/sh\r" fait
+# echouer l'exec avec "no such file or directory" alors que le fichier
+# existe bel et bien.
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 8000
 
