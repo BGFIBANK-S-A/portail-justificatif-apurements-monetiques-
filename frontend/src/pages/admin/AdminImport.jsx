@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Alert, Card, Col, ProgressBar, Row } from 'react-bootstrap'
+import { Alert, Button, Card, Col, ProgressBar, Row } from 'react-bootstrap'
 import { FiFileText, FiUsers, FiUploadCloud } from 'react-icons/fi'
 import api from '../../api/client'
 import MiseEnPage from '../../components/MiseEnPage'
@@ -111,9 +111,9 @@ export default function AdminImport() {
                   )}
                 </div>
               )}
-              <button type="button" className="btn btn-primary w-100 mt-3" disabled={!fichier || enCoursFichier} onClick={onImporterFichier}>
+              <Button variant="primary" className="w-100 mt-3" disabled={!fichier || enCoursFichier} onClick={onImporterFichier}>
                 {enCoursFichier ? 'Import en cours...' : 'Importer le fichier'}
-              </button>
+              </Button>
             </Card.Body>
           </Card>
         </Col>
@@ -147,9 +147,9 @@ export default function AdminImport() {
                   )}
                 </div>
               )}
-              <button type="button" className="btn btn-primary w-100 mt-3" disabled={!portefeuille || enCoursPortefeuille} onClick={onImporterPortefeuille}>
+              <Button variant="primary" className="w-100 mt-3" disabled={!portefeuille || enCoursPortefeuille} onClick={onImporterPortefeuille}>
                 {enCoursPortefeuille ? 'Import en cours...' : 'Importer le portefeuille'}
-              </button>
+              </Button>
             </Card.Body>
           </Card>
         </Col>

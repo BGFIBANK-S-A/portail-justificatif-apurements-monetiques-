@@ -10,8 +10,8 @@ export default function MiseEnPage({ children, titre }) {
       <NavbarVertical ouvert={sidebarOuverte} onToggle={setSidebarOuverte} />
       <div className="content">
         <NavbarTop titre={titre} onToggleSidebar={() => setSidebarOuverte((o) => !o)} />
-        <div className="pt-3">{children}</div>
-        <Footer />
+        <div className="pt-4 contenu-limite">{children}</div>
+        <div className="contenu-limite"><Footer /></div>
       </div>
     </div>
   )

@@ -1,36 +1,18 @@
 //
 // user-variables.scss
 //
-// Identite visuelle BGFIBank : bleu marine (couleur exacte du logo),
-// dans une direction "corporate bancaire classique" — bordures nettes,
-// coins peu arrondis, ombres discretes, plutot qu'un style SaaS moderne.
+// Identite visuelle BGFIBank (bleu marine du logo), dans un registre SaaS
+// moderne et epure : coins arrondis, ombres douces, typographie sans-serif
+// uniquement — plutot que le style "document officiel" utilise avant.
 $primary: #0d2b4e !default;
 
-// Coins presque carres (au lieu des coins tres arrondis du theme par defaut).
-$border-radius: 0.1875rem !default;
-$border-radius-sm: 0.125rem !default;
-$border-radius-lg: 0.25rem !default;
-$border-radius-xl: 0.25rem !default;
-$border-radius-xxl: 0.3rem !default;
-$border-radius-pill: 0.1875rem !default;
-
-// Bordures nettes plutot que des ombres flottantes : esthetique de portail
-// bancaire institutionnel.
-$box-shadow: 0 1px 3px rgba(13, 43, 78, 0.08) !default;
-$box-shadow-sm: 0 1px 2px rgba(13, 43, 78, 0.06) !default;
-$box-shadow-lg: 0 2px 6px rgba(13, 43, 78, 0.1) !default;
-
-$card-border-width: 1px !default;
-$card-border-radius: $border-radius !default;
-$card-border-color: #d7dde6 !default;
-$card-cap-bg: #f7f9fc !default;
-
-// Typographie : titres en serif (registre "document officiel/certificat"),
-// texte courant en sans-serif neutre et sobre (pas de police arrondie/ludique).
-$headings-font-family: Georgia, 'Times New Roman', Cambria, serif !default;
-$font-family-base: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto,
-  Helvetica, Arial, sans-serif !default;
-$font-family-sans-serif: $font-family-base !default;
+// Coins nettement arrondis (cartes, boutons, champs).
+$border-radius: 0.5rem !default;
+$border-radius-sm: 0.375rem !default;
+$border-radius-lg: 0.75rem !default;
+$border-radius-xl: 1rem !default;
+$border-radius-xxl: 1.25rem !default;
+$border-radius-pill: 50rem !default;
 
 $btn-border-radius: $border-radius !default;
 $btn-border-radius-sm: $border-radius-sm !default;
@@ -39,6 +21,6 @@ $input-border-radius: $border-radius !default;
 $input-border-radius-sm: $border-radius-sm !default;
 $input-border-radius-lg: $border-radius-lg !default;
 
-// Accent "or bancaire" : reserve aux marqueurs d'etat/actif, jamais utilise
-// comme couleur dominante.
-$bgfi-or: #96792c;
+// Typographie sans-serif uniquement (aucune police serif/Times) : on ne
+// touche pas a $headings-font-family, dont la valeur par defaut du theme
+// pointe deja vers la police sans-serif (jamais de serif/Georgia/Times).

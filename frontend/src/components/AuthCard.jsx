@@ -10,7 +10,7 @@ export default function AuthCard({ children }) {
               <div className="auth-logo-badge">
                 <img src="/BGFI_logo.png" alt="BGFIBank" />
               </div>
-              <div className="fw-bolder fs-4" style={{ fontFamily: 'Georgia, serif' }}>BGFIBank</div>
+              <div className="fw-bolder fs-4">BGFIBank</div>
               <div className="fs-10 opacity-75">Portail Justificatif d'Apurement</div>
             </div>
             <Card.Body className="auth-card-corps p-4 p-sm-5">
