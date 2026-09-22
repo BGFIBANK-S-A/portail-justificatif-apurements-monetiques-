@@ -23,9 +23,9 @@ const TYPES_DOC_VOYAGE = [
 ]
 
 function EtiquetteObligation({ obligatoire }) {
-  if (obligatoire === true) return <span className="badge badge-subtle-danger">Obligatoire</span>
-  if (obligatoire === 'alternatif') return <span className="badge badge-subtle-warning">Obligatoire (aller ou retour)</span>
-  return <span className="badge badge-subtle-secondary">Optionnel</span>
+  if (obligatoire === true) return <span className="badge-pastel badge-pastel-rouge">Obligatoire</span>
+  if (obligatoire === 'alternatif') return <span className="badge-pastel badge-pastel-orange">Obligatoire (aller ou retour)</span>
+  return <span className="badge-pastel badge-pastel-gris">Optionnel</span>
 }
 
 const TYPES_JUSTIF_LIGNE = [
@@ -144,167 +144,174 @@ export default function DetailDossier() {
         </Alert>
       )}
 
-      <Card className="mb-4">
-        <Card.Header><h5 className="mb-0">Informations</h5></Card.Header>
-        <Card.Body>
-          <p>Type : {dossier.type_dossier === 'voyage' ? 'Voyage' : 'Paiement en ligne'}</p>
-          <p>Montant a justifier : {formatMontant(dossier.montant)} XAF (deja justifie : {formatMontant(dossier.montant_justifie)} XAF)</p>
-          {dossier.jours_restants !== null && <p>Delai restant pour la justification : {dossier.jours_restants} jour(s)</p>}
-          <p className="text-body-secondary fs-10">
-            {dossier.type_dossier === 'voyage'
-              ? "Seule la part de vos operations hors CEMAC qui depasse 5 000 000 FCFA par voyage doit etre justifiee, dans un delai de 30 jours a compter de la 1ere operation."
-              : "Seule la part de vos paiements en ligne qui depasse 1 000 000 FCFA par mois doit etre justifiee, dans un delai de 30 jours a compter de la 1ere operation."}
-          </p>
-          {dossier.commentaire_admin && <p className="mb-0"><strong>Commentaire de la banque :</strong> {dossier.commentaire_admin}</p>}
-        </Card.Body>
-      </Card>
-
-      {dossier.type_dossier === 'voyage' && (
-        <Card className="mb-4">
-          <Card.Header><h5 className="mb-0">Documents de voyage</h5></Card.Header>
-          <Card.Body>
-            <p className="text-body-secondary fs-10">
-              Conformement a la reglementation (LC BEAC 004/GR/2022), le passeport est obligatoire ainsi qu'au moins un des billets (aller ou retour). Le visa et les autres justificatifs sont optionnels.
-            </p>
-            {!dateVoyageConnue && modifiable && (
+      <Row className="g-3">
+        <Col lg={4}>
+          <Card className="carte-kpi mb-3">
+            <Card.Header className="bg-transparent"><h5 className="mb-0">Informations</h5></Card.Header>
+            <Card.Body>
+              <p>Type : {dossier.type_dossier === 'voyage' ? 'Voyage' : 'Paiement en ligne'}</p>
+              <p>Montant a justifier : {formatMontant(dossier.montant)} XAF</p>
+              <p>Deja justifie : {formatMontant(dossier.montant_justifie)} XAF</p>
+              {dossier.jours_restants !== null && <p>Delai restant pour la justification : {dossier.jours_restants} jour(s)</p>}
               <p className="text-body-secondary fs-10">
-                Les dates de votre voyage seront detectees automatiquement depuis vos billets, ou vous pouvez les saisir manuellement ci-dessous.
+                {dossier.type_dossier === 'voyage'
+                  ? "Seule la part de vos operations hors CEMAC qui depasse 5 000 000 FCFA par voyage doit etre justifiee, dans un delai de 30 jours a compter de la 1ere operation."
+                  : "Seule la part de vos paiements en ligne qui depasse 1 000 000 FCFA par mois doit etre justifiee, dans un delai de 30 jours a compter de la 1ere operation."}
               </p>
-            )}
-            <Row className="g-3">
-              {TYPES_DOC_VOYAGE.map(({ cle, libelle, obligatoire }) => {
-                const doc = docParType(cle)
-                return (
-                  <Col xs={12} sm={6} lg={4} key={cle}>
-                    <div className="upload-tile">
-                      <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
-                        <div className="fw-semibold fs-10">{libelle}</div>
-                        <EtiquetteObligation obligatoire={obligatoire} />
-                      </div>
-                      {doc ? (
-                        <div className="fs-10">
-                          <button type="button" className="btn btn-link p-0 align-baseline" onClick={() => onVoirDocument(doc.id)}>{doc.nom_fichier}</button>
-                          <div className="mt-1"><Badge statut={doc.statut} /></div>
-                          {doc.motif_refus && <div className="text-danger">{doc.motif_refus}</div>}
-                        </div>
-                      ) : (
-                        <span className="text-body-secondary fs-10">Aucun document</span>
-                      )}
-                      {modifiable && (
-                        <div className="mt-2">
-                          <ChampFichier
-                            name={cle} accept=".png,.jpg,.jpeg,.pdf" variante="zone"
-                            texte={doc ? 'Remplacer' : 'Choisir un fichier'}
-                            disabled={envoiEnCours === cle}
-                            onChange={(fichier) => onUpload(cle, fichier)}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </Col>
-                )
-              })}
-            </Row>
-          </Card.Body>
-        </Card>
-      )}
-
-      {dossier.lignes.length > 0 && dossier.montant > 0 && (
-        <Card>
-          <Card.Header>
-            <h5 className="mb-0">Vos transactions {dossier.type_dossier === 'ligne' ? 'du mois' : 'a justifier'}</h5>
-            <p className="text-body-secondary fs-10 mb-0">
-              {formatMontant(dossier.montant_justifie)} XAF justifie sur {formatMontant(dossier.montant)} XAF a justifier.
-            </p>
-            {dossier.type_dossier === 'ligne' && (
-              <p className="text-body-secondary fs-10 mb-0">
-                Un justificatif est <span className="badge badge-subtle-danger">Obligatoire</span> pour chaque transaction ; choisissez la nature qui correspond le mieux a la depense.
-              </p>
-            )}
-          </Card.Header>
-          <Form onSubmit={onJustifierLignes}>
-            {dossier.type_dossier === 'voyage' && !dateVoyageConnue && modifiable && (
-              <Row className="mx-0 px-3 pt-3 g-3">
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label>Date de depart</Form.Label>
-                    <Form.Control type="date" value={dateAller} onChange={(e) => setDateAller(e.target.value)} />
-                  </Form.Group>
-                </Col>
-                <Col md={6}>
-                  <Form.Group>
-                    <Form.Label>Date de retour</Form.Label>
-                    <Form.Control type="date" value={dateRetour} onChange={(e) => setDateRetour(e.target.value)} />
-                  </Form.Group>
-                </Col>
-              </Row>
-            )}
-
-            <Card.Body className="p-0">
-              <div className="d-md-none">
-                {dossier.lignes.map((l) => (
-                  <div key={l.id} className="p-3 border-bottom">
-                    <div className="d-flex justify-content-between align-items-start mb-1">
-                      <span className="fw-semibold">{l.libelle}</span>
-                      <span className="fs-10 text-body-secondary text-nowrap ms-2">{formatDate(l.date_operation)}</span>
-                    </div>
-                    <div className="mb-2">{formatMontant(l.montant)} {l.devise}</div>
-                    {l.est_justifiee ? (
-                      <Badge statut="valide" />
-                    ) : modifiable ? (
-                      <ChampJustificatifLigne
-                        ligne={l} typeDossier={dossier.type_dossier}
-                        typeChoisi={typesJustifLigne[l.id]}
-                        onChangerType={(idLigne, valeur) => setTypesJustifLigne({ ...typesJustifLigne, [idLigne]: valeur })}
-                      />
-                    ) : (
-                      <span className="text-body-secondary fs-10">Non justifiee</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="table-responsive d-none d-md-block">
-                <Table hover className="mb-0">
-                  <thead className="bg-body-tertiary">
-                    <tr><th>Date</th><th>Libelle</th><th>Montant</th><th>Justificatif</th></tr>
-                  </thead>
-                  <tbody>
-                    {dossier.lignes.map((l) => (
-                      <tr key={l.id}>
-                        <td className="text-nowrap">{formatDate(l.date_operation)}</td>
-                        <td>{l.libelle}</td>
-                        <td className="text-nowrap">{formatMontant(l.montant)} {l.devise}</td>
-                        <td>
-                          {l.est_justifiee ? (
-                            <Badge statut="valide" />
-                          ) : modifiable ? (
-                            <ChampJustificatifLigne
-                              ligne={l} typeDossier={dossier.type_dossier}
-                              typeChoisi={typesJustifLigne[l.id]}
-                              onChangerType={(idLigne, valeur) => setTypesJustifLigne({ ...typesJustifLigne, [idLigne]: valeur })}
-                            />
-                          ) : (
-                            <span className="text-body-secondary">Non justifiee</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-
-              {modifiable && (
-                <div className="p-3">
-                  <Button type="submit" disabled={envoiEnCours === 'lignes'}>
-                    {envoiEnCours === 'lignes' ? 'Envoi...' : 'Envoyer les justificatifs'}
-                  </Button>
-                </div>
-              )}
+              {dossier.commentaire_admin && <p className="mb-0"><strong>Commentaire de la banque :</strong> {dossier.commentaire_admin}</p>}
             </Card.Body>
-          </Form>
-        </Card>
-      )}
+          </Card>
+        </Col>
+
+        <Col lg={8}>
+          {dossier.type_dossier === 'voyage' && (
+            <Card className="carte-kpi mb-3">
+              <Card.Header className="bg-transparent"><h5 className="mb-0">Documents de voyage</h5></Card.Header>
+              <Card.Body>
+                <p className="text-body-secondary fs-10">
+                  Conformement a la reglementation (LC BEAC 004/GR/2022), le passeport est obligatoire ainsi qu'au moins un des billets (aller ou retour). Le visa et les autres justificatifs sont optionnels.
+                </p>
+                {!dateVoyageConnue && modifiable && (
+                  <p className="text-body-secondary fs-10">
+                    Les dates de votre voyage seront detectees automatiquement depuis vos billets, ou vous pouvez les saisir manuellement ci-dessous.
+                  </p>
+                )}
+                <Row className="g-3">
+                  {TYPES_DOC_VOYAGE.map(({ cle, libelle, obligatoire }) => {
+                    const doc = docParType(cle)
+                    return (
+                      <Col xs={12} sm={6} lg={4} key={cle}>
+                        <div className="upload-tile">
+                          <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div className="fw-semibold fs-10">{libelle}</div>
+                            <EtiquetteObligation obligatoire={obligatoire} />
+                          </div>
+                          {doc ? (
+                            <div className="fs-10">
+                              <Button variant="link" className="p-0 align-baseline" onClick={() => onVoirDocument(doc.id)}>{doc.nom_fichier}</Button>
+                              <div className="mt-1"><Badge statut={doc.statut} /></div>
+                              {doc.motif_refus && <div className="text-danger">{doc.motif_refus}</div>}
+                            </div>
+                          ) : (
+                            <span className="text-body-secondary fs-10">Aucun document</span>
+                          )}
+                          {modifiable && (
+                            <div className="mt-2">
+                              <ChampFichier
+                                name={cle} accept=".png,.jpg,.jpeg,.pdf" variante="zone"
+                                texte={doc ? 'Remplacer' : 'Choisir un fichier'}
+                                disabled={envoiEnCours === cle}
+                                onChange={(fichier) => onUpload(cle, fichier)}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </Col>
+                    )
+                  })}
+                </Row>
+              </Card.Body>
+            </Card>
+          )}
+
+          {dossier.lignes.length > 0 && dossier.montant > 0 && (
+            <Card className="carte-kpi">
+              <Card.Header className="bg-transparent">
+                <h5 className="mb-0">Vos transactions {dossier.type_dossier === 'ligne' ? 'du mois' : 'a justifier'}</h5>
+                <p className="text-body-secondary fs-10 mb-0">
+                  {formatMontant(dossier.montant_justifie)} XAF justifie sur {formatMontant(dossier.montant)} XAF a justifier.
+                </p>
+                {dossier.type_dossier === 'ligne' && (
+                  <p className="text-body-secondary fs-10 mb-0">
+                    Un justificatif est <span className="badge-pastel badge-pastel-rouge">Obligatoire</span> pour chaque transaction ; choisissez la nature qui correspond le mieux a la depense.
+                  </p>
+                )}
+              </Card.Header>
+              <Form onSubmit={onJustifierLignes}>
+                {dossier.type_dossier === 'voyage' && !dateVoyageConnue && modifiable && (
+                  <Row className="mx-0 px-3 pt-3 g-3">
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label>Date de depart</Form.Label>
+                        <Form.Control type="date" value={dateAller} onChange={(e) => setDateAller(e.target.value)} />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group>
+                        <Form.Label>Date de retour</Form.Label>
+                        <Form.Control type="date" value={dateRetour} onChange={(e) => setDateRetour(e.target.value)} />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                )}
+
+                <Card.Body className="p-0">
+                  <div className="d-md-none">
+                    {dossier.lignes.map((l) => (
+                      <div key={l.id} className="p-3 border-bottom">
+                        <div className="d-flex justify-content-between align-items-start mb-1">
+                          <span className="fw-semibold">{l.libelle}</span>
+                          <span className="fs-10 text-body-secondary text-nowrap ms-2">{formatDate(l.date_operation)}</span>
+                        </div>
+                        <div className="mb-2">{formatMontant(l.montant)} {l.devise}</div>
+                        {l.est_justifiee ? (
+                          <Badge statut="valide" />
+                        ) : modifiable ? (
+                          <ChampJustificatifLigne
+                            ligne={l} typeDossier={dossier.type_dossier}
+                            typeChoisi={typesJustifLigne[l.id]}
+                            onChangerType={(idLigne, valeur) => setTypesJustifLigne({ ...typesJustifLigne, [idLigne]: valeur })}
+                          />
+                        ) : (
+                          <span className="text-body-secondary fs-10">Non justifiee</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="table-responsive d-none d-md-block">
+                    <Table hover className="mb-0">
+                      <thead className="bg-body-tertiary">
+                        <tr><th>Date</th><th>Libelle</th><th>Montant</th><th>Justificatif</th></tr>
+                      </thead>
+                      <tbody>
+                        {dossier.lignes.map((l) => (
+                          <tr key={l.id}>
+                            <td className="text-nowrap">{formatDate(l.date_operation)}</td>
+                            <td>{l.libelle}</td>
+                            <td className="text-nowrap">{formatMontant(l.montant)} {l.devise}</td>
+                            <td>
+                              {l.est_justifiee ? (
+                                <Badge statut="valide" />
+                              ) : modifiable ? (
+                                <ChampJustificatifLigne
+                                  ligne={l} typeDossier={dossier.type_dossier}
+                                  typeChoisi={typesJustifLigne[l.id]}
+                                  onChangerType={(idLigne, valeur) => setTypesJustifLigne({ ...typesJustifLigne, [idLigne]: valeur })}
+                                />
+                              ) : (
+                                <span className="text-body-secondary">Non justifiee</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  </div>
+
+                  {modifiable && (
+                    <div className="p-3">
+                      <Button type="submit" disabled={envoiEnCours === 'lignes'}>
+                        {envoiEnCours === 'lignes' ? 'Envoi...' : 'Envoyer les justificatifs'}
+                      </Button>
+                    </div>
+                  )}
+                </Card.Body>
+              </Form>
+            </Card>
+          )}
+        </Col>
+      </Row>
     </MiseEnPage>
   )
 }

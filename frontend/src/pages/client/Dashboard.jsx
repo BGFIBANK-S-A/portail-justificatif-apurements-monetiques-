@@ -14,7 +14,7 @@ function CarteDossierMobile({ d }) {
     <div className="p-3 border-bottom">
       <div className="d-flex justify-content-between align-items-start mb-1">
         <span className="fw-semibold">{d.reference}</span>
-        <span className="badge badge-subtle-secondary">{d.type_dossier === 'voyage' ? 'Voyage' : 'En ligne'}</span>
+        <span className="badge-pastel badge-pastel-bleu">{d.type_dossier === 'voyage' ? 'Voyage' : 'En ligne'}</span>
       </div>
       <div className="d-flex justify-content-between align-items-center mb-2">
         <span className="fw-semibold">{formatMontant(d.montant)} XAF</span>

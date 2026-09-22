@@ -14,7 +14,7 @@ export default function NavbarVertical({ ouvert, onToggle }) {
         <Navbar.Brand as={NavLink} to="/" className="navbar-brand text-left">
           <div className="d-flex align-items-center py-3">
             <img className="me-1" alt="BGFIBank" width={26} src="/BGFI_logo.png" />
-            <span className="font-sans-serif text-primary fw-bold">BGFIBank</span>
+            <span className="font-sans-serif fw-bold">BGFIBank</span>
           </div>
         </Navbar.Brand>
       </Flex>

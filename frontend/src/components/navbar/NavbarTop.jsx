@@ -18,22 +18,22 @@ export default function NavbarTop({ titre, onToggleSidebar }) {
 
   return (
     <>
-      <Navbar className="navbar-top-institutionnelle fs-10 navbar-top sticky-kit" expand>
+      <Navbar className="fs-10 navbar-top sticky-kit" expand>
         <button
           type="button"
-          className="btn btn-link d-flex flex-center d-xl-none me-2 p-0"
+          className="btn btn-link d-flex flex-center d-xl-none me-2 p-0 text-body-emphasis"
           onClick={onToggleSidebar}
           aria-label="Ouvrir le menu"
         >
           <FiMenu size={20} />
         </button>
-        {titre && <span className="fw-semibold">{titre}</span>}
+        {titre && <span className="fw-semibold text-body-emphasis">{titre}</span>}
         <ul className="ms-auto d-flex align-items-center navbar-nav-icons flex-row list-unstyled mb-0">
-          <li className="nav-item me-3 d-none d-sm-block opacity-75">
+          <li className="nav-item me-3 d-none d-sm-block text-body-secondary">
             {utilisateur?.prenom} {utilisateur?.nom}
           </li>
           <li className="nav-item">
-            <Button variant="outline-light" size="sm" onClick={() => setModalOuvert(true)}>
+            <Button variant="falcon-default" size="sm" onClick={() => setModalOuvert(true)}>
               <FiLogOut className="me-1" />Deconnexion
             </Button>
           </li>
