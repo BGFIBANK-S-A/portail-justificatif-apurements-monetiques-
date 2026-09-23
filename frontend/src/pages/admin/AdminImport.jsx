@@ -23,7 +23,7 @@ function ZoneDepotFichier({ id, fichier, onChange, accept }) {
 
 function StatTuile({ libelle, valeur }) {
   return (
-    <div className="stat-tuile">
+    <div className="border rounded-3 p-2 text-center bg-body-tertiary">
       <div className="fw-bold">{valeur}</div>
       <div className="fs-10 text-body-secondary">{libelle}</div>
     </div>
@@ -82,10 +82,10 @@ export default function AdminImport() {
 
       <Row className="g-3">
         <Col md={6}>
-          <Card className="carte-accent h-100">
+          <Card className="border-top border-3 border-primary h-100">
             <Card.Header>
               <div className="d-flex align-items-center gap-2">
-                <span className="icone-carte"><FiFileText /></span>
+                <span className="icon-item icon-item-sm bg-primary-subtle text-primary"><FiFileText /></span>
                 <div>
                   <h5 className="mb-0">Fichier journalier de transactions</h5>
                   <div className="fs-10 text-body-secondary">Depassements voyage et paiement en ligne</div>
@@ -119,10 +119,10 @@ export default function AdminImport() {
         </Col>
 
         <Col md={6}>
-          <Card className="carte-accent-violet h-100">
+          <Card className="border-top border-3 border-info h-100">
             <Card.Header>
               <div className="d-flex align-items-center gap-2">
-                <span className="icone-carte icone-carte-violet"><FiUsers /></span>
+                <span className="icon-item icon-item-sm bg-info-subtle text-info"><FiUsers /></span>
                 <div>
                   <h5 className="mb-0">Referentiel portefeuille</h5>
                   <div className="fs-10 text-body-secondary">Agence / Gestionnaire CRC / Client</div>

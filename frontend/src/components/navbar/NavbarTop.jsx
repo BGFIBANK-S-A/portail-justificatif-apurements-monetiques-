@@ -18,7 +18,7 @@ export default function NavbarTop({ titre, onToggleSidebar }) {
 
   return (
     <>
-      <Navbar className="fs-10 navbar-top sticky-kit" expand>
+      <Navbar className="navbar-glass fs-10 navbar-top sticky-kit" expand>
         <button
           type="button"
           className="btn btn-link d-flex flex-center d-xl-none me-2 p-0 text-body-emphasis"

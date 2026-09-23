@@ -148,19 +148,6 @@
 }
 .crc-mgmt-table tbody tr:hover { background: #f5f9ff; }
 
-.crc-mgmt-pill {
-  display: inline-block;
-  border-radius: 20px;
-  padding: 3px 12px;
-  font-size: 11px;
-  font-weight: 700;
-}
-.crc-mgmt-pill-incomplet { background: #fef7e0; color: #b3760a; }
-.crc-mgmt-pill-en_attente { background: #fef7e0; color: #b3760a; }
-.crc-mgmt-pill-en_cours { background: #e8f0fe; color: #1a56db; }
-.crc-mgmt-pill-valide { background: #e6f4ea; color: #1e7e34; }
-.crc-mgmt-pill-refuse { background: #fce8e6; color: #c5221f; }
-
 .crc-mgmt-vide {
   flex: 1;
   display: flex;

@@ -4,6 +4,7 @@ import { Alert, Button, Card, Table } from 'react-bootstrap'
 import api from '../../api/client'
 import MiseEnPage from '../../components/MiseEnPage'
 import Badge from '../../components/Badge'
+import SubtleBadge from '../../components/common/SubtleBadge'
 
 function formatMontant(m) {
   return new Intl.NumberFormat('fr-FR').format(m || 0)
@@ -14,7 +15,7 @@ function CarteDossierMobile({ d }) {
     <div className="p-3 border-bottom">
       <div className="d-flex justify-content-between align-items-start mb-1">
         <span className="fw-semibold">{d.reference}</span>
-        <span className="badge-pastel badge-pastel-bleu">{d.type_dossier === 'voyage' ? 'Voyage' : 'En ligne'}</span>
+        <SubtleBadge bg="primary">{d.type_dossier === 'voyage' ? 'Voyage' : 'En ligne'}</SubtleBadge>
       </div>
       <div className="d-flex justify-content-between align-items-center mb-2">
         <span className="fw-semibold">{formatMontant(d.montant)} XAF</span>

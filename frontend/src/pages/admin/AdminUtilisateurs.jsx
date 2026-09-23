@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Button, Card, Col, Form, InputGroup, Row, Table } from 'react-bootstrap'
-import { FiSearch } from 'react-icons/fi'
+import { Alert, Button, Card, Col, Form, Row } from 'react-bootstrap'
 import api from '../../api/client'
 import MiseEnPage from '../../components/MiseEnPage'
-import Pagination from '../../components/common/Pagination'
-import { usePagination } from '../../hooks/usePagination'
+import SubtleBadge from '../../components/common/SubtleBadge'
+import AdvanceTable from '../../components/common/advance-table/AdvanceTable'
+import AdvanceTableSearchBox from '../../components/common/advance-table/AdvanceTableSearchBox'
+import AdvanceTableFooter from '../../components/common/advance-table/AdvanceTableFooter'
+import AdvanceTableProvider from '../../providers/AdvanceTableProvider'
+import useAdvanceTable from '../../hooks/useAdvanceTable'
 import { useAuth } from '../../context/AuthContext'
 
 export default function AdminUtilisateurs() {
@@ -13,7 +16,6 @@ export default function AdminUtilisateurs() {
   const [erreur, setErreur] = useState(null)
   const [form, setForm] = useState({ nom: '', prenom: '', email: '', role: 'admin', mot_de_passe: '' })
   const [enCours, setEnCours] = useState(false)
-  const [recherche, setRecherche] = useState('')
 
   function charger() {
     api.get('/admin/utilisateurs/').then((res) => setDonnees(res.data)).catch(() => setErreur('Impossible de charger les utilisateurs.'))
@@ -55,14 +57,46 @@ export default function AdminUtilisateurs() {
     }
   }
 
-  const adminsFiltres = useMemo(() => {
-    if (!donnees) return []
-    const q = recherche.trim().toLowerCase()
-    if (!q) return donnees.admins
-    return donnees.admins.filter((a) => `${a.prenom} ${a.nom} ${a.email}`.toLowerCase().includes(q))
-  }, [donnees, recherche])
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'nom',
+      header: 'Nom',
+      cell: ({ row }) => `${row.original.prenom} ${row.original.nom}`,
+    },
+    { accessorKey: 'email', header: 'Email' },
+    {
+      accessorKey: 'role',
+      header: 'Role',
+      cell: ({ row }) => (row.original.role === 'admin' ? 'Administrateur' : 'Superviseur'),
+    },
+    {
+      accessorKey: 'actif',
+      header: 'Statut',
+      cell: ({ row }) => (row.original.actif ? <SubtleBadge bg="success">Actif</SubtleBadge> : <SubtleBadge bg="secondary">Inactif</SubtleBadge>),
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => {
+        const a = row.original
+        if (a.id === moi?.id) return null
+        return (
+          <>
+            <Button size="sm" variant="outline-secondary" onClick={() => onBasculer(a.id)}>{a.actif ? 'Desactiver' : 'Activer'}</Button>
+            <Button size="sm" variant="outline-danger" className="ms-2" onClick={() => onSupprimer(a.id)}>Supprimer</Button>
+          </>
+        )
+      },
+    },
+  ], [moi])
 
-  const { page, setPage, totalPages, itemsPage, total } = usePagination(adminsFiltres, 10)
+  const table = useAdvanceTable({
+    data: donnees?.admins || [],
+    columns,
+    sortable: true,
+    pagination: true,
+    perPage: 10,
+  })
 
   if (erreur && !donnees) return <MiseEnPage><Alert variant="danger">{erreur}</Alert></MiseEnPage>
   if (!donnees) return <MiseEnPage>Chargement...</MiseEnPage>
@@ -110,39 +144,20 @@ export default function AdminUtilisateurs() {
       </Card>
 
       <Card>
-        <Card.Body className="p-3 pb-0">
-          <InputGroup size="sm" style={{ maxWidth: 320 }}>
-            <InputGroup.Text><FiSearch /></InputGroup.Text>
-            <Form.Control placeholder="Rechercher un utilisateur..." value={recherche} onChange={(e) => setRecherche(e.target.value)} />
-          </InputGroup>
-        </Card.Body>
-        <Card.Body className="p-0">
-          <div className="table-responsive">
-            <Table hover className="mb-0">
-              <thead className="bg-body-tertiary"><tr><th>Nom</th><th>Email</th><th>Role</th><th>Statut</th><th></th></tr></thead>
-              <tbody>
-                {itemsPage.map((a) => (
-                  <tr key={a.id}>
-                    <td>{a.prenom} {a.nom}</td>
-                    <td>{a.email}</td>
-                    <td className="text-nowrap">{a.role === 'admin' ? 'Administrateur' : 'Superviseur'}</td>
-                    <td>{a.actif ? <span className="badge-pastel badge-pastel-vert">Actif</span> : <span className="badge-pastel badge-pastel-gris">Inactif</span>}</td>
-                    <td className="text-nowrap">
-                      {a.id !== moi?.id && (
-                        <>
-                          <Button size="sm" variant="outline-secondary" onClick={() => onBasculer(a.id)}>{a.actif ? 'Desactiver' : 'Activer'}</Button>
-                          <Button size="sm" variant="outline-danger" className="ms-2" onClick={() => onSupprimer(a.id)}>Supprimer</Button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {itemsPage.length === 0 && <tr><td colSpan={5} className="text-body-secondary">Aucun utilisateur.</td></tr>}
-              </tbody>
-            </Table>
-          </div>
-          <Pagination page={page} totalPages={totalPages} onChange={setPage} total={total} />
-        </Card.Body>
+        <AdvanceTableProvider {...table}>
+          <Card.Body className="p-3 pb-0">
+            <AdvanceTableSearchBox placeholder="Rechercher un utilisateur..." className="w-auto" />
+          </Card.Body>
+          <Card.Body className="p-0">
+            <AdvanceTable
+              headerClassName="bg-body-tertiary fw-medium font-sans-serif"
+              tableProps={{ hover: true, className: 'mb-0' }}
+            />
+          </Card.Body>
+          <Card.Footer>
+            <AdvanceTableFooter rowInfo rowsPerPageSelection navButtons />
+          </Card.Footer>
+        </AdvanceTableProvider>
       </Card>
     </MiseEnPage>
   )

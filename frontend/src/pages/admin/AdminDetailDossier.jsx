@@ -4,6 +4,7 @@ import { Alert, Button, Card, Col, Form, Row, Table } from 'react-bootstrap'
 import api from '../../api/client'
 import MiseEnPage from '../../components/MiseEnPage'
 import Badge from '../../components/Badge'
+import SubtleBadge from '../../components/common/SubtleBadge'
 import { ouvrirDocument } from '../../utils/documents'
 
 function formatMontant(m) {
@@ -36,9 +37,9 @@ const OBLIGATION_TYPE_DOCUMENT_VOYAGE = {
 }
 
 function EtiquetteObligation({ obligatoire }) {
-  if (obligatoire === true) return <span className="badge-pastel badge-pastel-rouge">Obligatoire</span>
-  if (obligatoire === 'alternatif') return <span className="badge-pastel badge-pastel-orange">Obligatoire (aller ou retour)</span>
-  return <span className="badge-pastel badge-pastel-gris">Optionnel</span>
+  if (obligatoire === true) return <SubtleBadge bg="danger">Obligatoire</SubtleBadge>
+  if (obligatoire === 'alternatif') return <SubtleBadge bg="warning">Obligatoire (aller ou retour)</SubtleBadge>
+  return <SubtleBadge bg="secondary">Optionnel</SubtleBadge>
 }
 
 export default function AdminDetailDossier() {
@@ -115,7 +116,7 @@ export default function AdminDetailDossier() {
 
       <Row className="g-3">
         <Col lg={4}>
-          <Card className="carte-kpi mb-3">
+          <Card className="mb-3">
             <Card.Header className="bg-transparent"><h5 className="mb-0">Client</h5></Card.Header>
             <Card.Body>
               <p>{dossier.client.prenom} {dossier.client.nom}<br /><span className="text-body-secondary fs-10">{dossier.client.email}</span></p>
@@ -134,7 +135,7 @@ export default function AdminDetailDossier() {
           </Card>
 
           {!cloture && (
-            <Card className="carte-kpi mb-3">
+            <Card className="mb-3">
               <Card.Header className="bg-transparent"><h5 className="mb-0">Decision</h5></Card.Header>
               <Card.Body>
                 <Form.Group className="mb-3">
@@ -152,7 +153,7 @@ export default function AdminDetailDossier() {
           )}
 
           {dossier.historique?.length > 0 && (
-            <Card className="carte-kpi mb-3">
+            <Card className="mb-3">
               <Card.Header className="bg-transparent"><h5 className="mb-0">Historique</h5></Card.Header>
               <Card.Body>
                 <ul className="fs-10 mb-0 ps-3">
@@ -168,7 +169,7 @@ export default function AdminDetailDossier() {
         </Col>
 
         <Col lg={8}>
-          <Card className="carte-kpi mb-3">
+          <Card className="mb-3">
             <Card.Header className="bg-transparent">
               <h5 className="mb-0">Documents a valider</h5>
               {dossier.type_dossier === 'voyage' && (
@@ -205,7 +206,7 @@ export default function AdminDetailDossier() {
             </Card.Body>
           </Card>
 
-          <Card className="carte-kpi mb-3">
+          <Card className="mb-3">
             <Card.Header className="bg-transparent"><h5 className="mb-0">Transactions</h5></Card.Header>
             <Card.Body className="p-0">
               <Table responsive className="mb-0">

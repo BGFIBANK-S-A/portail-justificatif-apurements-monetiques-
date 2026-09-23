@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Alert, Button, Card, Form, InputGroup, Table } from 'react-bootstrap'
+import { Alert, Button, Card, Form } from 'react-bootstrap'
 import { Bar } from 'react-chartjs-2'
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip } from 'chart.js'
-import { FiAlertTriangle, FiClock, FiFileText, FiSearch, FiUserX } from 'react-icons/fi'
+import { FiAlertTriangle, FiClock, FiFileText, FiUserX } from 'react-icons/fi'
 import api from '../../api/client'
 import MiseEnPage from '../../components/MiseEnPage'
 import Badge from '../../components/Badge'
-import Pagination from '../../components/common/Pagination'
-import { usePagination } from '../../hooks/usePagination'
+import Flex from '../../components/common/Flex'
+import AdvanceTable from '../../components/common/advance-table/AdvanceTable'
+import AdvanceTableSearchBox from '../../components/common/advance-table/AdvanceTableSearchBox'
+import AdvanceTableFooter from '../../components/common/advance-table/AdvanceTableFooter'
+import AdvanceTableProvider from '../../providers/AdvanceTableProvider'
+import useAdvanceTable from '../../hooks/useAdvanceTable'
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip)
 
@@ -17,12 +21,12 @@ function formatMontant(m) {
 }
 
 const TUILES = [
-  { cle: 'actifs', libelle: 'Dossiers actifs', icone: FiFileText, ton: '' },
-  { cle: 'incomplets', libelle: 'Incomplets', icone: FiAlertTriangle, ton: 'violet' },
-  { cle: 'en_attente', libelle: 'En attente', icone: FiClock, ton: 'alerte' },
-  { cle: 'en_cours', libelle: 'En cours', icone: FiClock, ton: '' },
-  { cle: 'mises_en_demeure', libelle: 'Mises en demeure', icone: FiAlertTriangle, ton: 'alerte' },
-  { cle: 'suspendus', libelle: 'Clients suspendus', icone: FiUserX, ton: 'alerte' },
+  { cle: 'actifs', libelle: 'Dossiers actifs', icone: FiFileText, ton: 'primary' },
+  { cle: 'incomplets', libelle: 'Incomplets', icone: FiAlertTriangle, ton: 'warning' },
+  { cle: 'en_attente', libelle: 'En attente', icone: FiClock, ton: 'info' },
+  { cle: 'en_cours', libelle: 'En cours', icone: FiClock, ton: 'secondary' },
+  { cle: 'mises_en_demeure', libelle: 'Mises en demeure', icone: FiAlertTriangle, ton: 'danger' },
+  { cle: 'suspendus', libelle: 'Clients suspendus', icone: FiUserX, ton: 'danger' },
 ]
 
 export default function AdminDashboard() {
@@ -30,7 +34,6 @@ export default function AdminDashboard() {
   const [erreur, setErreur] = useState(null)
   const [filtreStatut, setFiltreStatut] = useState('')
   const [filtreType, setFiltreType] = useState('')
-  const [recherche, setRecherche] = useState('')
 
   function charger(statut = filtreStatut, type = filtreType) {
     const params = {}
@@ -46,16 +49,43 @@ export default function AdminDashboard() {
     charger()
   }
 
-  const dossiersFiltres = useMemo(() => {
-    if (!donnees) return []
-    const q = recherche.trim().toLowerCase()
-    if (!q) return donnees.dossiers
-    return donnees.dossiers.filter((d) =>
-      d.reference.toLowerCase().includes(q) || `${d.client.prenom} ${d.client.nom}`.toLowerCase().includes(q)
-    )
-  }, [donnees, recherche])
+  const columns = useMemo(() => [
+    { accessorKey: 'reference', header: 'Reference' },
+    {
+      id: 'client',
+      header: 'Client',
+      accessorFn: (d) => `${d.client.prenom} ${d.client.nom}`,
+      cell: ({ row }) => `${row.original.client.prenom} ${row.original.client.nom}`,
+    },
+    {
+      accessorKey: 'type_dossier',
+      header: 'Type',
+      cell: ({ row }) => (row.original.type_dossier === 'voyage' ? 'Voyage' : 'En ligne'),
+    },
+    {
+      accessorKey: 'montant',
+      header: 'Montant',
+      cell: ({ row }) => `${formatMontant(row.original.montant)} XAF`,
+    },
+    {
+      accessorKey: 'statut',
+      header: 'Statut',
+      cell: ({ row }) => <Badge statut={row.original.statut} />,
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => <Link to={`/admin/dossier/${row.original.id}`}>Voir</Link>,
+    },
+  ], [])
 
-  const { page, setPage, totalPages, itemsPage, total } = usePagination(dossiersFiltres, 8)
+  const table = useAdvanceTable({
+    data: donnees?.dossiers || [],
+    columns,
+    sortable: true,
+    pagination: true,
+    perPage: 10,
+  })
 
   if (erreur) return <MiseEnPage><Alert variant="danger">{erreur}</Alert></MiseEnPage>
   if (!donnees) return <MiseEnPage>Chargement...</MiseEnPage>
@@ -77,34 +107,31 @@ export default function AdminDashboard() {
       <div className="row g-3 mb-4">
         {TUILES.map((t) => (
           <div className="col-6 col-md-4 col-lg-2" key={t.cle}>
-            <Card className="carte-kpi h-100">
-              <Card.Body>
-                <span className={`icone-carte mb-2 ${t.ton ? `icone-carte-${t.ton}` : ''}`}><t.icone /></span>
-                <div className="valeur">{donnees.stats[t.cle]}</div>
-                <div className="fs-10 text-body-secondary">{t.libelle}</div>
+            <Card className="h-100">
+              <Card.Body as={Flex} justifyContent="between" alignItems="center">
+                <div>
+                  <p className="fs-9 fw-medium text-body-secondary mb-1">{t.libelle}</p>
+                  <h4 className="mb-0 fw-bold">{donnees.stats[t.cle]}</h4>
+                </div>
+                <div className={`icon-item icon-item-lg bg-${t.ton}-subtle text-${t.ton}`}>
+                  <t.icone size={18} />
+                </div>
               </Card.Body>
             </Card>
           </div>
         ))}
       </div>
 
-      <Card className="carte-kpi mb-4">
-        <Card.Header className="bg-transparent border-0 pb-0"><h5 className="mb-0">Activite par categorie</h5></Card.Header>
+      <Card className="mb-4">
+        <Card.Header className="pb-0"><h6 className="mb-0 mt-2">Activite par categorie</h6></Card.Header>
         <Card.Body>
           <Bar data={dataChart} options={{ plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }} height={90} />
         </Card.Body>
       </Card>
 
-      <Card className="carte-kpi mb-3">
+      <Card className="mb-3">
         <Card.Body>
           <Form onSubmit={onFiltrer} className="d-flex flex-wrap gap-3 align-items-end">
-            <Form.Group>
-              <Form.Label className="fs-10 mb-1">Rechercher</Form.Label>
-              <InputGroup size="sm">
-                <InputGroup.Text><FiSearch /></InputGroup.Text>
-                <Form.Control placeholder="Reference ou client..." value={recherche} onChange={(e) => setRecherche(e.target.value)} />
-              </InputGroup>
-            </Form.Group>
             <Form.Group>
               <Form.Label className="fs-10 mb-1">Statut</Form.Label>
               <Form.Select size="sm" value={filtreStatut} onChange={(e) => setFiltreStatut(e.target.value)}>
@@ -127,30 +154,21 @@ export default function AdminDashboard() {
         </Card.Body>
       </Card>
 
-      <Card className="carte-kpi">
-        <Card.Body className="p-0">
-          <div className="table-responsive">
-            <Table hover className="mb-0">
-              <thead className="bg-body-tertiary">
-                <tr><th>Reference</th><th>Client</th><th>Type</th><th>Montant</th><th>Statut</th><th></th></tr>
-              </thead>
-              <tbody>
-                {itemsPage.map((d) => (
-                  <tr key={d.id}>
-                    <td className="text-nowrap">{d.reference}</td>
-                    <td>{d.client.prenom} {d.client.nom}</td>
-                    <td className="text-nowrap">{d.type_dossier === 'voyage' ? 'Voyage' : 'En ligne'}</td>
-                    <td className="text-nowrap">{formatMontant(d.montant)} XAF</td>
-                    <td><Badge statut={d.statut} /></td>
-                    <td><Link to={`/admin/dossier/${d.id}`}>Voir</Link></td>
-                  </tr>
-                ))}
-                {itemsPage.length === 0 && <tr><td colSpan={6} className="text-body-secondary">Aucun dossier.</td></tr>}
-              </tbody>
-            </Table>
-          </div>
-          <Pagination page={page} totalPages={totalPages} onChange={setPage} total={total} />
-        </Card.Body>
+      <Card>
+        <AdvanceTableProvider {...table}>
+          <Card.Body className="p-3 pb-0">
+            <AdvanceTableSearchBox placeholder="Rechercher un dossier..." className="w-auto" />
+          </Card.Body>
+          <Card.Body className="p-0">
+            <AdvanceTable
+              headerClassName="bg-body-tertiary fw-medium font-sans-serif"
+              tableProps={{ hover: true, className: 'mb-0' }}
+            />
+          </Card.Body>
+          <Card.Footer>
+            <AdvanceTableFooter rowInfo rowsPerPageSelection navButtons />
+          </Card.Footer>
+        </AdvanceTableProvider>
       </Card>
     </MiseEnPage>
   )

@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Button, Card, Form, InputGroup, Table } from 'react-bootstrap'
-import { FiSearch } from 'react-icons/fi'
+import { Alert, Button, Card } from 'react-bootstrap'
 import api from '../../api/client'
 import MiseEnPage from '../../components/MiseEnPage'
-import Pagination from '../../components/common/Pagination'
-import { usePagination } from '../../hooks/usePagination'
+import AdvanceTable from '../../components/common/advance-table/AdvanceTable'
+import AdvanceTableSearchBox from '../../components/common/advance-table/AdvanceTableSearchBox'
+import AdvanceTableFooter from '../../components/common/advance-table/AdvanceTableFooter'
+import AdvanceTableProvider from '../../providers/AdvanceTableProvider'
+import useAdvanceTable from '../../hooks/useAdvanceTable'
 
 export default function AdminSuspendus() {
   const [clients, setClients] = useState(null)
   const [erreur, setErreur] = useState(null)
-  const [recherche, setRecherche] = useState('')
 
   function charger() {
     api.get('/admin/suspendus/').then((res) => setClients(res.data)).catch(() => setErreur('Impossible de charger les clients suspendus.'))
@@ -23,14 +24,39 @@ export default function AdminSuspendus() {
     charger()
   }
 
-  const clientsFiltres = useMemo(() => {
-    if (!clients) return []
-    const q = recherche.trim().toLowerCase()
-    if (!q) return clients
-    return clients.filter((c) => `${c.prenom} ${c.nom} ${c.email}`.toLowerCase().includes(q))
-  }, [clients, recherche])
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'nom',
+      header: 'Client',
+      cell: ({ row }) => `${row.original.prenom} ${row.original.nom}`,
+    },
+    { accessorKey: 'email', header: 'Email' },
+    {
+      accessorKey: 'motif_suspension',
+      header: 'Motif',
+      cell: ({ row }) => row.original.motif_suspension || '-',
+    },
+    {
+      accessorKey: 'date_suspension',
+      header: 'Date',
+      cell: ({ row }) => (row.original.date_suspension ? new Date(row.original.date_suspension).toLocaleDateString('fr-FR') : '-'),
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => (
+        <Button size="sm" variant="outline-success" onClick={() => onReactiver(row.original.id)}>Reactiver</Button>
+      ),
+    },
+  ], [])
 
-  const { page, setPage, totalPages, itemsPage, total } = usePagination(clientsFiltres, 10)
+  const table = useAdvanceTable({
+    data: clients || [],
+    columns,
+    sortable: true,
+    pagination: true,
+    perPage: 10,
+  })
 
   if (erreur) return <MiseEnPage><Alert variant="danger">{erreur}</Alert></MiseEnPage>
   if (!clients) return <MiseEnPage>Chargement...</MiseEnPage>
@@ -44,38 +70,26 @@ export default function AdminSuspendus() {
       </p>
 
       <Card>
-        {clients.length > 0 && (
-          <Card.Body className="p-3 pb-0">
-            <InputGroup size="sm" style={{ maxWidth: 320 }}>
-              <InputGroup.Text><FiSearch /></InputGroup.Text>
-              <Form.Control placeholder="Rechercher un client..." value={recherche} onChange={(e) => setRecherche(e.target.value)} />
-            </InputGroup>
+        {clients.length === 0 ? (
+          <Card.Body>
+            <p className="text-body-secondary mb-0">Aucun client suspendu.</p>
           </Card.Body>
+        ) : (
+          <AdvanceTableProvider {...table}>
+            <Card.Body className="p-3 pb-0">
+              <AdvanceTableSearchBox placeholder="Rechercher un client..." className="w-auto" />
+            </Card.Body>
+            <Card.Body className="p-0">
+              <AdvanceTable
+                headerClassName="bg-body-tertiary fw-medium font-sans-serif"
+                tableProps={{ hover: true, className: 'mb-0' }}
+              />
+            </Card.Body>
+            <Card.Footer>
+              <AdvanceTableFooter rowInfo rowsPerPageSelection navButtons />
+            </Card.Footer>
+          </AdvanceTableProvider>
         )}
-        <Card.Body className="p-0">
-          {clients.length === 0 ? (
-            <p className="text-body-secondary p-3 mb-0">Aucun client suspendu.</p>
-          ) : (
-            <div className="table-responsive">
-              <Table hover className="mb-0">
-                <thead className="bg-body-tertiary"><tr><th>Client</th><th>Email</th><th>Motif</th><th>Date</th><th></th></tr></thead>
-                <tbody>
-                  {itemsPage.map((c) => (
-                    <tr key={c.id}>
-                      <td>{c.prenom} {c.nom}</td>
-                      <td>{c.email}</td>
-                      <td>{c.motif_suspension || '-'}</td>
-                      <td className="text-nowrap">{c.date_suspension ? new Date(c.date_suspension).toLocaleDateString('fr-FR') : '-'}</td>
-                      <td><Button size="sm" variant="outline-success" onClick={() => onReactiver(c.id)}>Reactiver</Button></td>
-                    </tr>
-                  ))}
-                  {itemsPage.length === 0 && <tr><td colSpan={5} className="text-body-secondary">Aucun resultat.</td></tr>}
-                </tbody>
-              </Table>
-            </div>
-          )}
-          <Pagination page={page} totalPages={totalPages} onChange={setPage} total={total} />
-        </Card.Body>
       </Card>
     </MiseEnPage>
   )

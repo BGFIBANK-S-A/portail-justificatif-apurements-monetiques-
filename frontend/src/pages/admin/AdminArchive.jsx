@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Alert, Card, Form, InputGroup, Table } from 'react-bootstrap'
-import { FiSearch } from 'react-icons/fi'
+import { Alert, Card } from 'react-bootstrap'
 import api from '../../api/client'
 import MiseEnPage from '../../components/MiseEnPage'
 import Badge from '../../components/Badge'
-import Pagination from '../../components/common/Pagination'
-import { usePagination } from '../../hooks/usePagination'
+import AdvanceTable from '../../components/common/advance-table/AdvanceTable'
+import AdvanceTableSearchBox from '../../components/common/advance-table/AdvanceTableSearchBox'
+import AdvanceTableFooter from '../../components/common/advance-table/AdvanceTableFooter'
+import AdvanceTableProvider from '../../providers/AdvanceTableProvider'
+import useAdvanceTable from '../../hooks/useAdvanceTable'
 
 function formatMontant(m) {
   return new Intl.NumberFormat('fr-FR').format(m || 0)
@@ -15,20 +17,58 @@ function formatMontant(m) {
 export default function AdminArchive() {
   const [donnees, setDonnees] = useState(null)
   const [erreur, setErreur] = useState(null)
-  const [recherche, setRecherche] = useState('')
 
   useEffect(() => {
     api.get('/admin/archive/').then((res) => setDonnees(res.data)).catch(() => setErreur('Impossible de charger les archives.'))
   }, [])
 
-  const groupesFiltres = useMemo(() => {
+  const dossiers = useMemo(() => {
     if (!donnees) return []
-    const q = recherche.trim().toLowerCase()
-    if (!q) return donnees.groupes
-    return donnees.groupes.filter((g) => `${g.client.prenom} ${g.client.nom} ${g.client.email}`.toLowerCase().includes(q))
-  }, [donnees, recherche])
+    return donnees.groupes.flatMap((g) => g.dossiers.map((d) => ({ ...d, client: g.client })))
+  }, [donnees])
 
-  const { page, setPage, totalPages, itemsPage, total } = usePagination(groupesFiltres, 5)
+  const columns = useMemo(() => [
+    {
+      id: 'client',
+      header: 'Client',
+      accessorFn: (d) => `${d.client.prenom} ${d.client.nom} ${d.client.email}`,
+      cell: ({ row }) => (
+        <>
+          <div className="fw-semibold">{row.original.client.prenom} {row.original.client.nom}</div>
+          <div className="fs-10 text-body-secondary">{row.original.client.email}</div>
+        </>
+      ),
+    },
+    { accessorKey: 'reference', header: 'Reference' },
+    {
+      accessorKey: 'type_dossier',
+      header: 'Type',
+      cell: ({ row }) => (row.original.type_dossier === 'voyage' ? 'Voyage' : 'En ligne'),
+    },
+    {
+      accessorKey: 'montant',
+      header: 'Montant',
+      cell: ({ row }) => `${formatMontant(row.original.montant)} XAF`,
+    },
+    {
+      accessorKey: 'statut',
+      header: 'Statut',
+      cell: ({ row }) => <Badge statut={row.original.statut} />,
+    },
+    {
+      id: 'actions',
+      header: '',
+      cell: ({ row }) => <Link to={`/admin/dossier/${row.original.id}`}>Voir</Link>,
+    },
+  ], [])
+
+  const table = useAdvanceTable({
+    data: dossiers,
+    columns,
+    sortable: true,
+    pagination: true,
+    perPage: 10,
+  })
 
   if (erreur) return <MiseEnPage><Alert variant="danger">{erreur}</Alert></MiseEnPage>
   if (!donnees) return <MiseEnPage>Chargement...</MiseEnPage>
@@ -40,43 +80,22 @@ export default function AdminArchive() {
       {donnees.groupes.length === 0 ? (
         <p className="text-body-secondary">Aucun dossier archive.</p>
       ) : (
-        <>
-          <InputGroup size="sm" className="mb-3" style={{ maxWidth: 320 }}>
-            <InputGroup.Text><FiSearch /></InputGroup.Text>
-            <Form.Control placeholder="Rechercher un client..." value={recherche} onChange={(e) => setRecherche(e.target.value)} />
-          </InputGroup>
-
-          {itemsPage.map((g) => (
-            <Card className="mb-3" key={g.client.id}>
-              <Card.Header className="bg-transparent"><h5 className="mb-0">{g.client.prenom} {g.client.nom}</h5><div className="fs-10 text-body-secondary">{g.client.email}</div></Card.Header>
-              <Card.Body className="p-0">
-                <div className="table-responsive">
-                  <Table hover className="mb-0">
-                    <thead className="bg-body-tertiary"><tr><th>Reference</th><th>Type</th><th>Montant</th><th>Statut</th><th></th></tr></thead>
-                    <tbody>
-                      {g.dossiers.map((d) => (
-                        <tr key={d.id}>
-                          <td className="text-nowrap">{d.reference}</td>
-                          <td className="text-nowrap">{d.type_dossier === 'voyage' ? 'Voyage' : 'En ligne'}</td>
-                          <td className="text-nowrap">{formatMontant(d.montant)} XAF</td>
-                          <td><Badge statut={d.statut} /></td>
-                          <td><Link to={`/admin/dossier/${d.id}`}>Voir</Link></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </div>
-              </Card.Body>
-            </Card>
-          ))}
-          {itemsPage.length === 0 && <p className="text-body-secondary">Aucun client ne correspond a cette recherche.</p>}
-
-          {totalPages > 1 && (
-            <Card className="carte-kpi">
-              <Pagination page={page} totalPages={totalPages} onChange={setPage} total={total} />
-            </Card>
-          )}
-        </>
+        <Card>
+          <AdvanceTableProvider {...table}>
+            <Card.Body className="p-3 pb-0">
+              <AdvanceTableSearchBox placeholder="Rechercher un client..." className="w-auto" />
+            </Card.Body>
+            <Card.Body className="p-0">
+              <AdvanceTable
+                headerClassName="bg-body-tertiary fw-medium font-sans-serif"
+                tableProps={{ hover: true, className: 'mb-0' }}
+              />
+            </Card.Body>
+            <Card.Footer>
+              <AdvanceTableFooter rowInfo rowsPerPageSelection navButtons />
+            </Card.Footer>
+          </AdvanceTableProvider>
+        </Card>
       )}
     </MiseEnPage>
   )

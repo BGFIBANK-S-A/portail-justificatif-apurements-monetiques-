@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { FiChevronRight, FiUsers } from 'react-icons/fi'
 import api from '../../api/client'
 import MiseEnPage from '../../components/MiseEnPage'
+import Badge from '../../components/Badge'
 import './gestionCrc.css'
 
 function formatMontant(m) {
@@ -111,7 +112,7 @@ export default function GestionCrc() {
                           <td>{d.client.prenom} {d.client.nom}</td>
                           <td>{d.type_dossier === 'voyage' ? 'Voyage' : 'En ligne'}</td>
                           <td>{formatMontant(d.montant)} XAF</td>
-                          <td><span className={`crc-mgmt-pill crc-mgmt-pill-${d.statut}`}>{d.statut}</span></td>
+                          <td><Badge statut={d.statut} /></td>
                           <td><Link to={`/admin/dossier/${d.id}`}>Voir</Link></td>
                         </tr>
                       ))}

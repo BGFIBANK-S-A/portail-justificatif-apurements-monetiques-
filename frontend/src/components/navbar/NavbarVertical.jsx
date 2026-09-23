@@ -9,12 +9,12 @@ export default function NavbarVertical({ ouvert, onToggle }) {
   const items = navItemsPourRole(utilisateur?.role)
 
   return (
-    <Navbar expand="xl" expanded={ouvert} onToggle={onToggle} className="navbar-vertical" variant="light">
+    <Navbar expand="xl" expanded={ouvert} onToggle={onToggle} className="navbar-vertical navbar-inverted" variant="light">
       <Flex alignItems="center">
         <Navbar.Brand as={NavLink} to="/" className="navbar-brand text-left">
           <div className="d-flex align-items-center py-3">
             <img className="me-1" alt="BGFIBank" width={26} src="/BGFI_logo.png" />
-            <span className="font-sans-serif fw-bold">BGFIBank</span>
+            <span className="font-sans-serif fw-bold text-white">BGFIBank</span>
           </div>
         </Navbar.Brand>
       </Flex>

@@ -4,6 +4,7 @@ import { Alert, Button, Card, Col, Form, Row, Table } from 'react-bootstrap'
 import api from '../../api/client'
 import MiseEnPage from '../../components/MiseEnPage'
 import Badge from '../../components/Badge'
+import SubtleBadge from '../../components/common/SubtleBadge'
 import ChampFichier from '../../components/ChampFichier'
 import { ouvrirDocument } from '../../utils/documents'
 
@@ -23,9 +24,9 @@ const TYPES_DOC_VOYAGE = [
 ]
 
 function EtiquetteObligation({ obligatoire }) {
-  if (obligatoire === true) return <span className="badge-pastel badge-pastel-rouge">Obligatoire</span>
-  if (obligatoire === 'alternatif') return <span className="badge-pastel badge-pastel-orange">Obligatoire (aller ou retour)</span>
-  return <span className="badge-pastel badge-pastel-gris">Optionnel</span>
+  if (obligatoire === true) return <SubtleBadge bg="danger">Obligatoire</SubtleBadge>
+  if (obligatoire === 'alternatif') return <SubtleBadge bg="warning">Obligatoire (aller ou retour)</SubtleBadge>
+  return <SubtleBadge bg="secondary">Optionnel</SubtleBadge>
 }
 
 const TYPES_JUSTIF_LIGNE = [
@@ -146,7 +147,7 @@ export default function DetailDossier() {
 
       <Row className="g-3">
         <Col lg={4}>
-          <Card className="carte-kpi mb-3">
+          <Card className="mb-3">
             <Card.Header className="bg-transparent"><h5 className="mb-0">Informations</h5></Card.Header>
             <Card.Body>
               <p>Type : {dossier.type_dossier === 'voyage' ? 'Voyage' : 'Paiement en ligne'}</p>
@@ -165,7 +166,7 @@ export default function DetailDossier() {
 
         <Col lg={8}>
           {dossier.type_dossier === 'voyage' && (
-            <Card className="carte-kpi mb-3">
+            <Card className="mb-3">
               <Card.Header className="bg-transparent"><h5 className="mb-0">Documents de voyage</h5></Card.Header>
               <Card.Body>
                 <p className="text-body-secondary fs-10">
@@ -215,7 +216,7 @@ export default function DetailDossier() {
           )}
 
           {dossier.lignes.length > 0 && dossier.montant > 0 && (
-            <Card className="carte-kpi">
+            <Card>
               <Card.Header className="bg-transparent">
                 <h5 className="mb-0">Vos transactions {dossier.type_dossier === 'ligne' ? 'du mois' : 'a justifier'}</h5>
                 <p className="text-body-secondary fs-10 mb-0">
@@ -223,7 +224,7 @@ export default function DetailDossier() {
                 </p>
                 {dossier.type_dossier === 'ligne' && (
                   <p className="text-body-secondary fs-10 mb-0">
-                    Un justificatif est <span className="badge-pastel badge-pastel-rouge">Obligatoire</span> pour chaque transaction ; choisissez la nature qui correspond le mieux a la depense.
+                    Un justificatif est <SubtleBadge bg="danger">Obligatoire</SubtleBadge> pour chaque transaction ; choisissez la nature qui correspond le mieux a la depense.
                   </p>
                 )}
               </Card.Header>
